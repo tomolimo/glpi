@@ -9,7 +9,7 @@
 
  based on GLPI - Gestionnaire Libre de Parc Informatique
  Copyright (C) 2003-2014 by the INDEPNET Development Team.
- 
+
  -------------------------------------------------------------------------
 
  LICENSE
@@ -98,6 +98,19 @@ switch($_POST['action']) {
          }
       }
       Html::ajaxFooter();
+      break;
+   case "movetonextside":
+      if (!isset($_POST['id']) || !isset($_POST['itemtype']) || !isset($_POST['newpos'])) {
+         exit();
+      }
+      $obj = new $_POST['itemtype'] ;
+      $obj->getFromDB( $_POST['id'] ) ;
+      $obj->fields['timeline_position'] = $_POST['newpos'];
+      $obj->mailqueueonaction = false;
+      $mailoldvalue=$CFG_GLPI["use_mailing"];
+      $CFG_GLPI["use_mailing"] = false;
+      $obj->update( $obj->fields, 0 ) ;
+      $CFG_GLPI["use_mailing"] = $mailoldvalue;
       break;
 }
 ?>

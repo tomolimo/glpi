@@ -708,6 +708,7 @@ class Document_Item extends CommonDBRelation{
          echo "<input type='hidden' name='items_id' value='".$item->getID()."'>";
          if ($item->getType() == 'Ticket') {
             echo "<input type='hidden' name='tickets_id' value='".$item->getID()."'>";
+            echo "<input type='hidden' name='timeline_position' value='".$item->timelinePosition()."'>";
          }
          echo Html::file(array('multiple' => true));
          echo "</td><td class='left'>(".Document::getMaxUploadSize().")&nbsp;</td>";

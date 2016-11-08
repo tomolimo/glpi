@@ -86,6 +86,9 @@ class Ticket extends CommonITILObject {
    const CHANGEPRIORITY   =  65536;
    const SURVEY           = 131072;
 
+   // position of items in timeline
+   const TIMELINE_LEFT     = 1;
+   const TIMELINE_RIGHT    = 2;
 
    function getForbiddenStandardMassiveAction() {
 
@@ -6200,8 +6203,9 @@ class Ticket extends CommonITILObject {
       $document_items = $document_item_obj->find("itemtype = 'Ticket' AND items_id = ".$this->getID());
       foreach ($document_items as $document_item) {
          $document_obj->getFromDB($document_item['documents_id']);
+         $document_obj->fields['timeline_position'] = $document_item['timeline_position'] ;
          $timeline[$document_obj->fields['date_mod']."_document_".$document_item['documents_id']]
-            = array('type' => 'Document_Item', 'item' => $document_obj->fields);
+            = array('type' => 'Document_Item', 'item' => $document_obj->fields, 'items_id' => $document_item['id']);
       }
 
       //add existing solution
@@ -6258,25 +6262,27 @@ class Ticket extends CommonITILObject {
             $user->getFromDB($validation['users_id_validate']);
             $timeline[$validation['submission_date']."_validation_".$validations_id]
                = array('type' => 'TicketValidation',
-                       'item' => array('id'        => $validations_id,
-                                       'date'      => $validation['submission_date'],
-                                       'content'   => __('Validation request')." => ".$user->getlink().
-                                                      "<br>".$validation['comment_submission'],
-                                       'users_id'  => $validation['users_id'],
-                                       'can_edit'  => $canedit));
+                       'item' => array('id'                 => $validations_id,
+                                       'date'               => $validation['submission_date'],
+                                       'content'            => __('Validation request')." => ".$user->getlink().
+                                                               "<br>".$validation['comment_submission'],
+                                       'users_id'           => $validation['users_id'],
+                                       'can_edit'           => $canedit,
+                                       'timeline_position'  => $validation['timeline_position']));
 
             if (!empty($validation['validation_date'])) {
                $timeline[$validation['validation_date']."_validation_".$validations_id]
                   = array('type' => 'TicketValidation',
-                          'item' => array('id'        => $validations_id,
-                                          'date'      => $validation['validation_date'],
-                                          'content'   => __('Validation request answer')." : ".
-                                                         _sx('status',
-                                                             ucfirst(TicketValidation::getStatus($validation['status'])))
-                                                         ."<br>".$validation['comment_validation'],
-                                          'users_id'  => $validation['users_id_validate'],
-                                          'status'    => "status_".$validation['status'],
-                                          'can_edit'  => $canedit));
+                          'item' => array('id'                 => $validations_id,
+                                          'date'               => $validation['validation_date'],
+                                          'content'            => __('Validation request answer')." : ".
+                                                                  _sx('status',
+                                                                      ucfirst(TicketValidation::getStatus($validation['status'])))
+                                                                  ."<br>".$validation['comment_validation'],
+                                          'users_id'           => $validation['users_id_validate'],
+                                          'status'             => "status_".$validation['status'],
+                                          'can_edit'           => $canedit,
+                                          'timeline_position'  => $validation['timeline_position']));
             }
          }
       }
@@ -6323,6 +6329,36 @@ class Ticket extends CommonITILObject {
       // show title for timeline
       self::showTimelineHeader();
 
+      echo "<style type='text/css'>
+         div.float_left { float : left }
+         div.float_right { float : right }
+         </style>
+      " ;
+
+      echo Html::scriptBlock("
+         function moveToNextSide(timeline_nextside, timeline_item) {
+            $(timeline_item).toggleClass('left right');
+            $(timeline_nextside).toggleClass('float_left float_right');
+            var new_pos = '".Ticket::TIMELINE_LEFT."' ;
+            $(timeline_nextside).html('&gt&nbsp;');
+            if( $(timeline_item).hasClass('right') ) {
+               new_pos = '".Ticket::TIMELINE_RIGHT."' ;
+               $(timeline_nextside).html('&nbsp;&lt;');
+            }
+            $.ajax({
+               method: 'POST',
+               url: '../ajax/timeline.php',
+               data: {
+                  action   : 'movetonextside',
+                  id       : $(timeline_item).data('id'),
+                  itemtype : $(timeline_item).data('itemtype'),
+                  newpos   : new_pos
+               }
+            });
+           //debugger ;
+         }
+      ") ;
+
       $timeline_index = 0;
       foreach ($timeline as $item) {
          $options = array( 'parent' => $this,
@@ -6349,23 +6385,39 @@ class Ticket extends CommonITILObject {
             $date = $item_i['date_mod'];
          }
 
-         // check if curent item user is assignee or requester
+         // check timeline_position of $item_i if available
          $user_position = 'left';
-         if ((isset($ticket_users_keys[$item_i['users_id']])
-              && ($ticket_users_keys[$item_i['users_id']] == CommonItilActor::ASSIGN))
-             || ($item['type'] == 'Assign')) {
-            $user_position = 'right';
+         if( isset( $item_i['timeline_position'] ) && ($item_i['timeline_position']== Ticket::TIMELINE_RIGHT)) {
+            $user_position = 'right' ;
+         } else {
+            // check if curent item user is assignee or requester
+            if ((isset($ticket_users_keys[$item_i['users_id']])
+                 && ($ticket_users_keys[$item_i['users_id']] == CommonItilActor::ASSIGN))
+                || ($item['type'] == 'Assign')) {
+               $user_position = 'right';
+            }
          }
 
          //display solution in middle
-         if (($timeline_index == 0)
-             && ($item['type'] == "Solution")
-             && ($this->fields["status"] == CommonITILObject::SOLVED)) {
-            $user_position.= ' middle';
+         if (($item['type'] == "Solution")
+             && (($this->fields["status"] == CommonITILObject::SOLVED)
+                  ||($this->fields["status"] == CommonITILObject::CLOSED)) ) {
+            $user_position .= ' middle';
          }
 
-         echo "<div class='h_item $user_position'>";
-
+         echo "<div id='timeline_index_$timeline_index' class='h_item $user_position'>";
+         if( !strstr( $user_position, " middle" ) && $item_i['can_edit']) {
+            echo "<div id='timeline_nextside_$timeline_index' class='float_$user_position' title='".__("Move item to next side of timeline")
+                  ."' onclick='moveToNextSide(timeline_nextside_$timeline_index, timeline_index_$timeline_index)' style='cursor:pointer'>"
+                  .($user_position == 'right' ? "&nbsp;<" : ">&nbsp;")
+                  ."</div>";
+            echo Html::scriptBlock("
+               (function() {
+                  $('#timeline_index_$timeline_index').data( 'id', '".(isset($item['items_id']) ? $item['items_id'] : $item_i['id'])."') ;
+                  $('#timeline_index_$timeline_index').data( 'itemtype', '".$item['type']."') ;
+               })();
+            ") ;
+         }
          echo "<div class='h_info'>";
 
          echo "<div class='h_date'>".Html::convDateTime($date)."</div>";
@@ -6615,6 +6667,22 @@ class Ticket extends CommonITILObject {
       echo "<script type='text/javascript'>read_more();</script>";
       }
 
+   /**
+    * Summary of timelinePosition
+    * returns a position to be used in the timeline
+    * computed like following
+    *    if current user or one of user's groups is in requester list then returns Ticket::TIMELINE_LEFT
+    *    else returns Ticket::TIMELINE_RIGHT
+    */
+   function timelinePosition( ) {
+      $ret = Ticket::TIMELINE_RIGHT ;
+      if( $this->isUser(CommonITILActor::REQUESTER, Session::getLoginUserID())
+                     || (isset($_SESSION["glpigroups"])
+                        && $this->haveAGroup(CommonITILActor::REQUESTER, $_SESSION['glpigroups']))) {
+         $ret = Ticket::TIMELINE_LEFT;
+      }
+      return $ret;
+   }
 
     /**
     * @since version 0.90

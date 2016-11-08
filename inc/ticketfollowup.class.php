@@ -671,6 +671,7 @@ class TicketFollowup  extends CommonDBTM {
 
             echo "</td><td colspan='2'>&nbsp;";
          }
+         echo "<input type='hidden' name='timeline_position' value='".Ticket::TIMELINE_RIGHT."'>";
          echo "<input type='hidden' name='tickets_id' value='".$this->fields["tickets_id"]."'>";
          // Reopen case
          if ($reopen_case) {
@@ -704,6 +705,7 @@ class TicketFollowup  extends CommonDBTM {
          echo "<td class='middle right'>".__('Description')."</td>";
          echo "<td class='center middle'>";
          echo "<textarea name='content' cols='80' rows='6'>".$this->fields["content"]."</textarea>";
+         echo "<input type='hidden' name='timeline_position' value='".Ticket::TIMELINE_LEFT."'>";
          echo "<input type='hidden' name='tickets_id' value='".$this->fields["tickets_id"]."'>";
          echo "<input type='hidden' name='requesttypes_id' value='".
                 RequestType::getDefault('followup')."'>";

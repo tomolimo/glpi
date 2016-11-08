@@ -1242,6 +1242,7 @@ abstract class CommonITILTask  extends CommonDBTM {
            "</textarea>";
       echo Html::scriptBlock("$(document).ready(function() { $('#content$rand').autogrow(); });");
       echo "</td>";
+      echo "<input type='hidden' name='timeline_position' value='".Ticket::TIMELINE_RIGHT."'>";
       echo "<input type='hidden' name='$fkfield' value='".$this->fields[$fkfield]."'>";
       echo "</td></tr>\n";
 
@@ -1556,8 +1557,8 @@ abstract class CommonITILTask  extends CommonDBTM {
 
          while ($data = $DB->fetch_assoc($result)) {
             if ($this->getFromDB($data['id'])) {
-               $options = array( 'parent' => $item, 
-                                 'rand' => $rand, 
+               $options = array( 'parent' => $item,
+                                 'rand' => $rand,
                                  'showprivate' => $showprivate ) ;
                Plugin::doHook('pre_show_item', array('item' => $this, 'options' => &$options));
                $this->showInObjectSumnary($item, $rand, $showprivate);

@@ -293,9 +293,10 @@ class Document extends CommonDBTM {
           && !empty($this->input["itemtype"])) {
 
          $docitem = new Document_Item();
-         $docitem->add(array('documents_id' => $this->fields['id'],
-                             'itemtype'     => $this->input["itemtype"],
-                             'items_id'     => $this->input["items_id"]));
+         $docitem->add(array('documents_id'      => $this->fields['id'],
+                             'itemtype'          => $this->input["itemtype"],
+                             'items_id'          => $this->input["items_id"],
+                             'timeline_position' => isset($this->input["timeline_position"]) ? $this->input["timeline_position"] : 0));
 
          Event::log($this->fields['id'], "documents", 4, "document",
                   //TRANS: %s is the user login
