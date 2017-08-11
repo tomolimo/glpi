@@ -297,6 +297,7 @@ CREATE TABLE `glpi_budgets` (
   KEY `entities_id` (`entities_id`),
   KEY `is_deleted` (`is_deleted`),
   KEY `begin_date` (`begin_date`),
+  KEY `end_date` (`end_date`),
   KEY `is_template` (`is_template`),
   KEY `date_mod` (`date_mod`),
   KEY `date_creation` (`date_creation`),
@@ -338,7 +339,7 @@ CREATE TABLE `glpi_businesscriticities` (
   `sons_cache` longtext COLLATE utf8_unicode_ci,
   PRIMARY KEY (`id`),
   KEY `name` (`name`),
-  KEY `unicity` (`businesscriticities_id`,`name`),
+  UNIQUE KEY `unicity` (`businesscriticities_id`,`name`),
   KEY `date_mod` (`date_mod`),
   KEY `date_creation` (`date_creation`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -780,6 +781,7 @@ CREATE TABLE `glpi_changetasks` (
   `content` longtext COLLATE utf8_unicode_ci,
   `actiontime` int(11) NOT NULL DEFAULT '0',
   `date_mod` datetime DEFAULT NULL,
+  `date_creation` datetime DEFAULT NULL,
   `tasktemplates_id` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `changes_id` (`changes_id`),
@@ -790,6 +792,7 @@ CREATE TABLE `glpi_changetasks` (
   KEY `groups_id_tech` (`groups_id_tech`),
   KEY `date` (`date`),
   KEY `date_mod` (`date_mod`),
+  KEY `date_creation` (`date_creation`),
   KEY `begin` (`begin`),
   KEY `end` (`end`),
   KEY `taskcategories_id` (`taskcategories_id`),
@@ -895,8 +898,8 @@ DROP TABLE IF EXISTS `glpi_computermodels`;
 CREATE TABLE `glpi_computermodels` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
-  `product_number` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `comment` text COLLATE utf8_unicode_ci,
+  `product_number` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `date_mod` datetime DEFAULT NULL,
   `date_creation` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -1892,8 +1895,8 @@ CREATE TABLE `glpi_devicegraphiccards` (
   `memory_default` int(11) NOT NULL DEFAULT '0',
   `entities_id` int(11) NOT NULL DEFAULT '0',
   `is_recursive` tinyint(1) NOT NULL DEFAULT '0',
-  `chipset` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `devicegraphiccardmodels_id` int(11) DEFAULT NULL,
+  `chipset` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `date_mod` datetime DEFAULT NULL,
   `date_creation` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -2644,7 +2647,7 @@ CREATE TABLE `glpi_documentcategories` (
   `date_creation` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `name` (`name`),
-  KEY `unicity` (`documentcategories_id`,`name`),
+  UNIQUE KEY `unicity` (`documentcategories_id`,`name`),
   KEY `date_mod` (`date_mod`),
   KEY `date_creation` (`date_creation`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
@@ -3099,12 +3102,12 @@ CREATE TABLE `glpi_groups` (
   `sons_cache` longtext COLLATE utf8_unicode_ci,
   `is_requester` tinyint(1) NOT NULL DEFAULT '1',
   `is_assign` tinyint(1) NOT NULL DEFAULT '1',
+  `is_task` tinyint(1) NOT NULL DEFAULT '1',
   `is_notify` tinyint(1) NOT NULL DEFAULT '1',
   `is_itemgroup` tinyint(1) NOT NULL DEFAULT '1',
   `is_usergroup` tinyint(1) NOT NULL DEFAULT '1',
   `is_manager` tinyint(1) NOT NULL DEFAULT '1',
   `date_creation` datetime DEFAULT NULL,
-  `is_task` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
   KEY `name` (`name`),
   KEY `ldap_field` (`ldap_field`),
@@ -4011,6 +4014,8 @@ CREATE TABLE `glpi_knowbaseitems` (
   KEY `knowbaseitemcategories_id` (`knowbaseitemcategories_id`),
   KEY `is_faq` (`is_faq`),
   KEY `date_mod` (`date_mod`),
+  KEY `begin_date` (`begin_date`),
+  KEY `end_date` (`end_date`),
   FULLTEXT KEY `fulltext` (`name`,`answer`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -4080,7 +4085,7 @@ CREATE TABLE `glpi_lines` (
   `lineoperators_id`     INT(11) NOT NULL DEFAULT 0,
   `locations_id`         INT(11) NOT NULL DEFAULT '0',
   `states_id`            INT(11) NOT NULL DEFAULT '0',
-  `linetype_id`          INT(11) NOT NULL DEFAULT '0',
+  `linetypes_id`         INT(11) NOT NULL DEFAULT '0',
   `date_creation`        DATETIME DEFAULT NULL,
   `date_mod`             DATETIME DEFAULT NULL,
   `comment`              TEXT DEFAULT NULL,
@@ -4599,12 +4604,16 @@ CREATE TABLE `glpi_networkportfiberchannels` (
   `netpoints_id` int(11) NOT NULL DEFAULT '0',
   `wwn` varchar(16) COLLATE utf8_unicode_ci DEFAULT '',
   `speed` int(11) NOT NULL DEFAULT '10' COMMENT 'Mbit/s: 10, 100, 1000, 10000',
+  `date_mod` datetime DEFAULT NULL,
+  `date_creation` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `networkports_id` (`networkports_id`),
   KEY `card` (`items_devicenetworkcards_id`),
   KEY `netpoint` (`netpoints_id`),
   KEY `wwn` (`wwn`),
-  KEY `speed` (`speed`)
+  KEY `speed` (`speed`),
+  KEY `date_mod` (`date_mod`),
+  KEY `date_creation` (`date_creation`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 ### Dump table glpi_networkportlocals
@@ -6316,6 +6325,7 @@ CREATE TABLE `glpi_problemtasks` (
   `actiontime` int(11) NOT NULL DEFAULT '0',
   `state` int(11) NOT NULL DEFAULT '0',
   `date_mod` datetime DEFAULT NULL,
+  `date_creation` datetime DEFAULT NULL,
   `tasktemplates_id` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `problems_id` (`problems_id`),
@@ -6325,6 +6335,7 @@ CREATE TABLE `glpi_problemtasks` (
   KEY `groups_id_tech` (`groups_id_tech`),
   KEY `date` (`date`),
   KEY `date_mod` (`date_mod`),
+  KEY `date_creation` (`date_creation`),
   KEY `begin` (`begin`),
   KEY `end` (`end`),
   KEY `state` (`state`),
@@ -7715,7 +7726,7 @@ CREATE TABLE `glpi_slalevels_tickets` (
   PRIMARY KEY (`id`),
   KEY `tickets_id` (`tickets_id`),
   KEY `slalevels_id` (`slalevels_id`),
-  KEY `unicity` (`tickets_id`,`slalevels_id`)
+  UNIQUE KEY `unicity` (`tickets_id`,`slalevels_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 ### Dump table glpi_olalevelactions
@@ -7778,7 +7789,7 @@ CREATE TABLE `glpi_olalevels_tickets` (
   PRIMARY KEY (`id`),
   KEY `tickets_id` (`tickets_id`),
   KEY `olalevels_id` (`olalevels_id`),
-  KEY `unicity` (`tickets_id`,`olalevels_id`)
+  UNIQUE KEY `unicity` (`tickets_id`,`olalevels_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 ### Dump table glpi_slms
@@ -7789,15 +7800,17 @@ CREATE TABLE `glpi_slms` (
   `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `entities_id` int(11) NOT NULL DEFAULT '0',
   `is_recursive` tinyint(1) NOT NULL DEFAULT '0',
-  `calendars_id` int(11) NOT NULL DEFAULT '0',
   `comment` text COLLATE utf8_unicode_ci,
+  `calendars_id` int(11) NOT NULL DEFAULT '0',
   `date_mod` datetime DEFAULT NULL,
+  `date_creation` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `name` (`name`),
   KEY `entities_id` (`entities_id`),
   KEY `is_recursive` (`is_recursive`),
   KEY `calendars_id` (`calendars_id`),
-  KEY `date_mod` (`date_mod`)
+  KEY `date_mod` (`date_mod`),
+  KEY `date_creation` (`date_creation`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 ### Dump table glpi_slas
@@ -7811,6 +7824,7 @@ CREATE TABLE `glpi_slas` (
   `type` int(11) NOT NULL DEFAULT '0',
   `comment` text COLLATE utf8_unicode_ci,
   `number_time` int(11) NOT NULL,
+  `calendars_id` int(11) NOT NULL DEFAULT '0',
   `date_mod` datetime DEFAULT NULL,
   `definition_time` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `end_of_working_day` tinyint(1) NOT NULL DEFAULT '0',
@@ -7820,6 +7834,7 @@ CREATE TABLE `glpi_slas` (
   KEY `name` (`name`),
   KEY `date_mod` (`date_mod`),
   KEY `date_creation` (`date_creation`),
+  KEY `calendars_id` (`calendars_id`),
   KEY `slms_id` (`slms_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -7834,6 +7849,7 @@ CREATE TABLE `glpi_olas` (
   `type` int(11) NOT NULL DEFAULT '0',
   `comment` text COLLATE utf8_unicode_ci,
   `number_time` int(11) NOT NULL,
+  `calendars_id` int(11) NOT NULL DEFAULT '0',
   `date_mod` datetime DEFAULT NULL,
   `definition_time` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `end_of_working_day` tinyint(1) NOT NULL DEFAULT '0',
@@ -7843,6 +7859,7 @@ CREATE TABLE `glpi_olas` (
   KEY `name` (`name`),
   KEY `date_mod` (`date_mod`),
   KEY `date_creation` (`date_creation`),
+  KEY `calendars_id` (`calendars_id`),
   KEY `slms_id` (`slms_id`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
@@ -7887,18 +7904,19 @@ CREATE TABLE `glpi_softwarelicenses` (
   `date_mod` datetime DEFAULT NULL,
   `is_valid` tinyint(1) NOT NULL DEFAULT '1',
   `date_creation` datetime DEFAULT NULL,
-  `is_template` tinyint(1) NOT NULL DEFAULT '0',
-  `template_name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0',
   `locations_id` int(11) NOT NULL DEFAULT '0',
   `users_id_tech` int(11) NOT NULL DEFAULT '0',
   `users_id` int(11) NOT NULL DEFAULT '0',
   `groups_id_tech` int(11) NOT NULL DEFAULT '0',
   `groups_id` int(11) NOT NULL DEFAULT '0',
   `is_helpdesk_visible` tinyint(1) NOT NULL DEFAULT '0',
-  `is_deleted` tinyint(1) NOT NULL DEFAULT '0',
-  `manufacturers_id` int(11) NOT NULL DEFAULT '0',
+  `is_template` tinyint(1) NOT NULL DEFAULT '0',
+  `template_name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   `states_id` int(11) NOT NULL DEFAULT '0',
+  `manufacturers_id` int(11) NOT NULL DEFAULT '0',
   `contact` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+  `contact_num` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `name` (`name`),
   KEY `is_template` (`is_template`),
@@ -7917,7 +7935,7 @@ CREATE TABLE `glpi_softwarelicenses` (
   KEY `groups_id_tech` (`groups_id_tech`),
   KEY `groups_id` (`groups_id`),
   KEY `is_helpdesk_visible` (`is_helpdesk_visible`),
-  KEY `is_deleted` (`is_helpdesk_visible`),
+  KEY `is_deleted` (`is_deleted`),
   KEY `date_creation` (`date_creation`),
   KEY `manufacturers_id` (`manufacturers_id`),
   KEY `states_id` (`states_id`)
@@ -8113,7 +8131,7 @@ CREATE TABLE `glpi_states` (
   `date_creation` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `name` (`name`),
-  KEY `unicity` (`states_id`,`name`),
+  UNIQUE KEY `unicity` (`states_id`,`name`),
   KEY `is_visible_computer` (`is_visible_computer`),
   KEY `is_visible_monitor` (`is_visible_monitor`),
   KEY `is_visible_networkequipment` (`is_visible_networkequipment`),
@@ -8296,9 +8314,11 @@ CREATE TABLE `glpi_ticketfollowups` (
   `requesttypes_id` int(11) NOT NULL DEFAULT '0',
   `date_mod` datetime DEFAULT NULL,
   `timeline_position` tinyint(1) NOT NULL DEFAULT '0',
+  `date_creation` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `date` (`date`),
   KEY `date_mod` (`date_mod`),
+  KEY `date_creation` (`date_creation`),
   KEY `users_id` (`users_id`),
   KEY `users_id_editor` (`users_id_editor`),
   KEY `tickets_id` (`tickets_id`),
@@ -8357,8 +8377,8 @@ CREATE TABLE `glpi_tickets` (
   `solutiontypes_id` int(11) NOT NULL DEFAULT '0',
   `solution` longtext COLLATE utf8_unicode_ci,
   `global_validation` int(11) NOT NULL DEFAULT '1',
-  `slas_tto_id` int(11) NOT NULL DEFAULT '0',
   `slas_ttr_id` int(11) NOT NULL DEFAULT '0',
+  `slas_tto_id` int(11) NOT NULL DEFAULT '0',
   `ttr_slalevels_id` int(11) NOT NULL DEFAULT '0',
   `time_to_resolve` datetime DEFAULT NULL,
   `time_to_own` datetime DEFAULT NULL,
@@ -8398,6 +8418,7 @@ CREATE TABLE `glpi_tickets` (
   KEY `time_to_own` (`time_to_own`),
   KEY `olas_tto_id` (`olas_tto_id`),
   KEY `olas_ttr_id` (`olas_ttr_id`),
+  KEY `ttr_slalevels_id` (`ttr_slalevels_id`),
   KEY `internal_time_to_resolve` (`internal_time_to_resolve`),
   KEY `internal_time_to_own` (`internal_time_to_own`),
   KEY `users_id_lastupdater` (`users_id_lastupdater`),
@@ -8420,7 +8441,7 @@ CREATE TABLE `glpi_tickets_tickets` (
   `tickets_id_2` int(11) NOT NULL DEFAULT '0',
   `link` int(11) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`),
-  KEY `unicity` (`tickets_id_1`,`tickets_id_2`)
+  UNIQUE KEY `unicity` (`tickets_id_1`,`tickets_id_2`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -8475,11 +8496,13 @@ CREATE TABLE `glpi_tickettasks` (
   `users_id_tech` int(11) NOT NULL DEFAULT '0',
   `groups_id_tech` INT(11) NOT NULL DEFAULT '0',
   `date_mod` datetime DEFAULT NULL,
+  `date_creation` datetime DEFAULT NULL,
   `tasktemplates_id` int(11) NOT NULL DEFAULT '0',
   `timeline_position` tinyint(1) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
   KEY `date` (`date`),
   KEY `date_mod` (`date_mod`),
+  KEY `date_creation` (`date_creation`),
   KEY `users_id` (`users_id`),
   KEY `users_id_editor` (`users_id_editor`),
   KEY `tickets_id` (`tickets_id`),
@@ -8502,7 +8525,7 @@ CREATE TABLE `glpi_tickettemplatehiddenfields` (
   `tickettemplates_id` int(11) NOT NULL DEFAULT '0',
   `num` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  KEY `unicity` (`tickettemplates_id`,`num`)
+  UNIQUE KEY `unicity` (`tickettemplates_id`,`num`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -8514,7 +8537,7 @@ CREATE TABLE `glpi_tickettemplatemandatoryfields` (
   `tickettemplates_id` int(11) NOT NULL DEFAULT '0',
   `num` int(11) NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
-  KEY `unicity` (`tickettemplates_id`,`num`)
+  UNIQUE KEY `unicity` (`tickettemplates_id`,`num`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 INSERT INTO `glpi_tickettemplatemandatoryfields` VALUES ('1','1','21');
@@ -8528,7 +8551,7 @@ CREATE TABLE `glpi_tickettemplatepredefinedfields` (
   `num` int(11) NOT NULL DEFAULT '0',
   `value` text COLLATE utf8_unicode_ci,
   PRIMARY KEY (`id`),
-  KEY `unicity` (`tickettemplates_id`,`num`)
+  UNIQUE KEY `unicity` (`tickettemplates_id`,`num`)
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
@@ -8749,7 +8772,9 @@ CREATE TABLE `glpi_users` (
   KEY `date_mod` (`date_mod`),
   KEY `authitem` (`authtype`,`auths_id`),
   KEY `is_deleted_ldap` (`is_deleted_ldap`),
-  KEY `date_creation` (`date_creation`)
+  KEY `date_creation` (`date_creation`),
+  KEY `begin_date` (`begin_date`),
+  KEY `end_date` (`end_date`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 INSERT INTO `glpi_users` VALUES ('2','glpi','$2y$10$rXXzbc2ShaiCldwkw4AZL.n.9QSH7c0c9XJAyyjrbL9BwmWditAYm','','','','',NULL,'0',NULL,'0','20','1',NULL,'0','1','2014-06-18 08:02:24','2014-06-18 08:02:24',NULL,'0','0','0','0','0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,0,'');
