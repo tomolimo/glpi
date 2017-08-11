@@ -109,12 +109,12 @@ class Ticket extends CommonITILObject {
       //    else, if $user is in technician list, then it is on the right side
       //    else it is on the left side
       // 2) rule for solutions: always on the right side
-      switch($sub_type){
+      switch ($sub_type) {
          case 'TicketFollowup':
          case 'Document_Item':
          case 'TicketTask':
          case 'TicketValidation':
-            if (isset($actors[$users_id]) 
+            if (isset($actors[$users_id])
                   && !in_array($actors[$users_id], [CommonItilActor::REQUESTER, CommonItilActor::OBSERVER])
                   && $actors[$users_id] == CommonItilActor::ASSIGN) {
                $pos = self::TIMELINE_RIGHT;
@@ -6861,14 +6861,14 @@ class Ticket extends CommonITILObject {
 
          // set item position depending on field timeline_position
          $user_position = 'left'; // default position
-         if( isset($item_i['timeline_position'])) {
-            switch($item_i['timeline_position']) {
+         if (isset($item_i['timeline_position'])) {
+            switch ($item_i['timeline_position']) {
                case self::TIMELINE_LEFT:
                   $user_position = 'left';
-                  break ;
+                  break;
                case self::TIMELINE_MIDLEFT:
                   $user_position = 'left middle';
-                  break ;
+                  break;
                case self::TIMELINE_MIDRIGHT:
                   $user_position = 'right middle';
                   break;
