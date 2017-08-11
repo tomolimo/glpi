@@ -1755,13 +1755,12 @@ Regards,',
       'registration_uuid'  => Telemetry::generateRegistrationUuid()
    ]);
 
-
    //add timeline_position in ticketfollowups
    //add timeline_position in tickettasks
    //add timeline_position in documents_items
    //add timeline_position in ticketvalidations
    $timeline_tables = ['glpi_ticketfollowups', 'glpi_tickettasks', 'glpi_documents_items', 'glpi_ticketvalidations'];
-   foreach($timeline_tables as $tl_table){
+   foreach ($timeline_tables as $tl_table) {
       //add timeline_position in $tl_table
       if (!$DB->fieldExists($tl_table, 'timeline_position')) {
          $migration->addField($tl_table, "timeline_position", "tinyint(1) NOT NULL DEFAULT '0'");
@@ -1786,7 +1785,6 @@ Regards,',
                                    WHERE `$tl_table`.`timeline_position` = 0");
       }
    }
-
 
    if (isIndex('glpi_authldaps', 'use_tls')) {
       $query = "ALTER TABLE `glpi_authldaps` DROP INDEX `use_tls`";
@@ -1891,7 +1889,6 @@ Regards,',
             'unicity',
             'UNIQUE'
          );
-
 
       }
    }
