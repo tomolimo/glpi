@@ -384,6 +384,8 @@ class TicketFollowup  extends CommonDBTM {
       // }
       unset($input["add"]);
 
+      $input['timeline_position'] = Ticket::getTimelinePosition($input["tickets_id"], $this->getType(), $input["users_id"]);
+
       $input["date"] = $_SESSION["glpi_currenttime"];
       return $input;
    }
