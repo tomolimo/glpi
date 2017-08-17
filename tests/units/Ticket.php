@@ -1226,9 +1226,9 @@ class Ticket extends DbTestCase {
       )->isTrue();
 
       // test timeline_position from getTimelineItems()
-      $timeline_items = $ticket->getTimelineItems() ;
+      $timeline_items = $ticket->getTimelineItems();
 
-      foreach($timeline_items as $item) {
+      foreach ($timeline_items as $item) {
          switch ($item['type']) {
             case 'TicketFollowup':
             case 'TicketTask':
@@ -1239,7 +1239,7 @@ class Ticket extends DbTestCase {
                } else {
                   $this->integer((int)$item['item']['timeline_position'])->isEqualTo(\CommonITILObject::TIMELINE_RIGHT);
                }
-               break ;
+               break;
             case 'Solution':
                $this->integer((int)$item['item']['timeline_position'])->isEqualTo(\CommonITILObject::TIMELINE_RIGHT);
                break;

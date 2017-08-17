@@ -118,7 +118,7 @@ class Ticket extends CommonITILObject {
       // default position is left
       $pos = self::TIMELINE_LEFT;
 
-      $pos_matrix = [] ;
+      $pos_matrix = [];
       $pos_matrix[0][0][1] = self::TIMELINE_RIGHT;
       $pos_matrix[0][1][1] = self::TIMELINE_RIGHT;
 
