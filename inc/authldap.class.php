@@ -56,6 +56,10 @@ class AuthLDAP extends CommonDBTM {
    //Import user by giving his email
    const IDENTIFIER_EMAIL = 'email';
 
+   const GROUP_SEARCH_USER    = 0;
+   const GROUP_SEARCH_GROUP   = 1;
+   const GROUP_SEARCH_BOTH    = 2;
+
    // From CommonDBTM
    public $dohistory = true;
 
@@ -81,7 +85,7 @@ class AuthLDAP extends CommonDBTM {
       $this->fields['use_tls']                     = 0;
       $this->fields['group_field']                 = '';
       $this->fields['group_condition']             = '';
-      $this->fields['group_search_type']           = 0;
+      $this->fields['group_search_type']           = self::GROUP_SEARCH_USER;
       $this->fields['group_member_field']          = '';
       $this->fields['email1_field']                = 'mail';
       $this->fields['email2_field']                = '';
@@ -122,7 +126,7 @@ class AuthLDAP extends CommonDBTM {
             $this->fields['group_field']               = 'memberof';
             $this->fields['group_condition']
                = '(&(objectClass=user)(objectCategory=person)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))';
-            $this->fields['group_search_type']         = 0;
+            $this->fields['group_search_type']         = self::GROUP_SEARCH_USER;
             $this->fields['group_member_field']        = '';
             $this->fields['email1_field']              = 'mail';
             $this->fields['email2_field']              = '';
@@ -553,7 +557,7 @@ class AuthLDAP extends CommonDBTM {
    static function dropdownGroupSearchType(array $options) {
 
       $p['name']    = 'group_search_type';
-      $p['value']   = 0;
+      $p['value']   = self::GROUP_SEARCH_USER;
       $p['display'] = true;
 
       if (count($options)) {
@@ -576,10 +580,11 @@ class AuthLDAP extends CommonDBTM {
     * @return array|string
     */
    static function getGroupSearchTypeName($val = null) {
-
-      $tmp[0] = __('In users');
-      $tmp[1] = __('In groups');
-      $tmp[2] = __('In users and groups');
+      $tmp = [
+         self::GROUP_SEARCH_USER    => __('In users'),
+         self::GROUP_SEARCH_GROUP   => __('In groups'),
+         self::GROUP_SEARCH_BOTH    => __('In users and groups')
+      ];
 
       if (is_null($val)) {
          return $tmp;
@@ -1152,6 +1157,10 @@ class AuthLDAP extends CommonDBTM {
    static function displayLdapFilter($target, $users = true) {
 
       $config_ldap = new self();
+      if (!isset($_SESSION['ldap_server'])) {
+         throw new \RuntimeException('LDAP server must be set!');
+      }
+      $config_ldap->getFromDB($_SESSION['ldap_server']);
 
       if ($users) {
          $filter_name1 = "condition";
@@ -1160,15 +1169,15 @@ class AuthLDAP extends CommonDBTM {
       } else {
          $filter_var = "ldap_group_filter";
          switch ($config_ldap->fields["group_search_type"]) {
-            case 0 :
+            case self::GROUP_SEARCH_USER:
                $filter_name1 = "condition";
                break;
 
-            case 1 :
+            case self::GROUP_SEARCH_GROUP:
                $filter_name1 = "group_condition";
                break;
 
-            case 2 :
+            case self::GROUP_SEARCH_BOTH:
                $filter_name1 = "group_condition";
                $filter_name2 = "condition";
                break;
@@ -1189,7 +1198,7 @@ class AuthLDAP extends CommonDBTM {
       echo "<input type='text' name='ldap_filter' value='". $_SESSION[$filter_var] ."' size='70'>";
       //Only display when looking for groups in users AND groups
       if (!$users
-          && ($config_ldap->fields["group_search_type"] == 2)) {
+          && ($config_ldap->fields["group_search_type"] == self::GROUP_SEARCH_BOTH)) {
 
          if (!isset($_SESSION["ldap_group_filter2"]) || ($_SESSION["ldap_group_filter2"] == '')) {
             $_SESSION["ldap_group_filter2"] = $config_ldap->fields[$filter_name2];
@@ -1877,17 +1886,17 @@ class AuthLDAP extends CommonDBTM {
       $ds = $config_ldap->connect();
       if ($ds) {
          switch ($config_ldap->fields["group_search_type"]) {
-            case 0 :
+            case self::GROUP_SEARCH_USER:
                $infos = self::getGroupsFromLDAP($ds, $config_ldap, $filter,
                                                 $limitexceeded, false, $infos);
                break;
 
-            case 1 :
+            case self::GROUP_SEARCH_GROUP:
                $infos = self::getGroupsFromLDAP($ds, $config_ldap, $filter,
                                                 $limitexceeded, true, $infos);
                break;
 
-            case 2 :
+            case self::GROUP_SEARCH_BOTH:
                $infos = self::getGroupsFromLDAP($ds, $config_ldap, $filter,
                                                 $limitexceeded, true, $infos);
                $infos = self::getGroupsFromLDAP($ds, $config_ldap, $filter2,
@@ -1946,6 +1955,10 @@ class AuthLDAP extends CommonDBTM {
    static function getGroupCNByDn($ldap_connection, $group_dn) {
 
       $sr = @ ldap_read($ldap_connection, $group_dn, "objectClass=*", ["cn"]);
+      if ($sr === false) {
+         //group does not exists
+         return false;
+      }
       $v  = self::get_entries_clean($ldap_connection, $sr);
       if (!is_array($v) || (count($v) == 0) || empty($v[0]["cn"][0])) {
          return false;
@@ -2100,7 +2113,7 @@ class AuthLDAP extends CommonDBTM {
 
       echo "<div class='center'>";
       echo "<form action='$target' method=\"post\">";
-      echo "<p>" . __('Please choose LDAP directory to import users from') . "</p>";
+      echo "<p>" . __('Please choose LDAP directory to import users and groups from') . "</p>";
       echo "<table class='tab_cadre_fixe'>";
       echo "<tr class='tab_bg_2'><th colspan='2'>" . __('LDAP directory choice') . "</th></tr>";
 
@@ -2210,7 +2223,7 @@ class AuthLDAP extends CommonDBTM {
 
                   $user->fields["id"] = $user->add($input);
                   return ['action' => self::USER_IMPORTED,
-                               'id'     => $user->fields["id"]];
+                          'id'     => $user->fields["id"]];
                }
                //Get the ID by user name
                if (!($id = User::getIdByfield('name', $login))) {
@@ -2224,7 +2237,7 @@ class AuthLDAP extends CommonDBTM {
                }
                $user->update($input);
                return ['action' => self::USER_SYNCHRONIZED,
-                            'id'     => $input['id']];
+                       'id'     => $input['id']];
             }
             return false;
 
@@ -2233,7 +2246,7 @@ class AuthLDAP extends CommonDBTM {
             $users_id = User::getIdByField('name', $params['value']);
             User::manageDeletedUserInLdap($users_id);
             return ['action' => self::USER_DELETED_LDAP,
-                          'id'    => $users_id];
+                    'id'    => $users_id];
          }
 
       } else {
@@ -2243,7 +2256,7 @@ class AuthLDAP extends CommonDBTM {
 
 
    /**
-    * Converts an array of parameters into a query string to be appended to a URL.
+    * Import grousp from an LDAP directory
     *
     * @param string $group_dn dn of the group to import
     * @param array  $options  array for
@@ -2251,9 +2264,9 @@ class AuthLDAP extends CommonDBTM {
     *             - entities_id where group must to be imported
     *             - is_recursive
     *
-    * @return void
+    * @return integer|false
     */
-   static function ldapImportGroup ($group_dn, $options = []) {
+   static function ldapImportGroup($group_dn, $options = []) {
 
       $config_ldap = new self();
       $res         = $config_ldap->getFromDB($options['authldaps_id']);
@@ -2270,15 +2283,15 @@ class AuthLDAP extends CommonDBTM {
          $group       = new Group();
          if ($options['type'] == "groups") {
             return $group->add(["name"          => addslashes($group_infos["cn"][0]),
-                                     "ldap_group_dn" => addslashes($group_infos["dn"]),
-                                     "entities_id"   => $options['entities_id'],
-                                     "is_recursive"  => $options['is_recursive']]);
+                                "ldap_group_dn" => addslashes($group_infos["dn"]),
+                                "entities_id"   => $options['entities_id'],
+                                "is_recursive"  => $options['is_recursive']]);
          }
          return $group->add(["name"         => addslashes($group_infos["cn"][0]),
-                                  "ldap_field"   => $config_ldap->fields["group_field"],
-                                  "ldap_value"   => addslashes($group_infos["dn"]),
-                                  "entities_id"  => $options['entities_id'],
-                                  "is_recursive" => $options['is_recursive']]);
+                             "ldap_field"   => $config_ldap->fields["group_field"],
+                             "ldap_value"   => addslashes($group_infos["dn"]),
+                             "entities_id"  => $options['entities_id'],
+                             "is_recursive" => $options['is_recursive']]);
       }
       return false;
    }
@@ -2571,7 +2584,7 @@ class AuthLDAP extends CommonDBTM {
 
          if ($info) {
             return ['dn'        => $values['user_dn'],
-                         $login_attr => $info[$login_attr][0]];
+                    $login_attr => $info[$login_attr][0]];
          }
       }
 
@@ -2589,7 +2602,7 @@ class AuthLDAP extends CommonDBTM {
 
          if (is_array($info) && ($info['count'] == 1)) {
             return ['dn'        => $info[0]['dn'],
-                         $login_attr => $info[0][$login_attr][0]];
+                    $login_attr => $info[0][$login_attr][0]];
          }
       }
       return false;
