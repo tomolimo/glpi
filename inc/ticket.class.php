@@ -98,26 +98,42 @@ class Ticket extends CommonITILObject {
     * @since 9.2
     */
    static function getTimelinePosition($items_id, $sub_type, $users_id) {
-      $pos = self::TIMELINE_LEFT;
       $tkt = new self;
       $tkt->fields['id'] = $items_id;
       $actors = $tkt->getTicketActors();
 
       // 1) rule for followups, documents, tasks and validations:
-      //    if $user is in requester or watcher list,
-      //       then it is on the left side
-      //    else, if $user is in technician list, then it is on the right side
-      //    else it is on the left side
+      //    Matrix for position of timeline objects
+      //    R O A (R=Requester, O=Observer, A=AssignedTo)
+      //    0 0 1 -> Right
+      //    0 1 0 -> Left
+      //    0 1 1 -> R
+      //    1 0 0 -> L
+      //    1 0 1 -> L
+      //    1 1 0 -> L
+      //    1 1 1 -> L
+      //    if users_id is not in the actor list, then pos is left
       // 2) rule for solutions: always on the right side
+
+      // default position is left
+      $pos = self::TIMELINE_LEFT;
+
+      $pos_matrix = [] ;
+      $pos_matrix[0][0][1] = self::TIMELINE_RIGHT;
+      $pos_matrix[0][1][1] = self::TIMELINE_RIGHT;
+
       switch ($sub_type) {
          case 'TicketFollowup':
          case 'Document_Item':
          case 'TicketTask':
          case 'TicketValidation':
-            if (isset($actors[$users_id])
-                  && !in_array($actors[$users_id], [CommonItilActor::REQUESTER, CommonItilActor::OBSERVER])
-                  && $actors[$users_id] == CommonItilActor::ASSIGN) {
-               $pos = self::TIMELINE_RIGHT;
+            if (isset($actors[$users_id])) {
+               $r = in_array(CommonItilActor::REQUESTER, $actors[$users_id]) ? 1 : 0;
+               $o = in_array(CommonItilActor::OBSERVER, $actors[$users_id]) ? 1 : 0;
+               $a = in_array(CommonItilActor::ASSIGN, $actors[$users_id]) ? 1 : 0;
+               if (isset($pos_matrix[$r][$o][$a])) {
+                  $pos = $pos_matrix[$r][$o][$a];
+               }
             }
             break;
          case 'Solution':
@@ -7169,6 +7185,10 @@ class Ticket extends CommonITILObject {
 
 
    /**
+    * Summary of getTicketActors
+    * Get the list of actors for the current ticket
+    * will return an assoc array of users_id => array of roles.
+    * @return array[] of array[] of users and roles
     * @since version 0.90
    **/
    function getTicketActors() {
@@ -7186,13 +7206,12 @@ class Ticket extends CommonITILObject {
                       LEFT JOIN `glpi_users` usr ON gu.`users_id` = usr.`id`
                       WHERE gt.`tickets_id` = ".$this->getId()."
                      ) AS allactors
-                GROUP BY `users_id`
-                ORDER BY `type` DESC";
+                ";
 
       $res               = $DB->query($query);
       $ticket_users_keys = [];
       while ($current_tu = $DB->fetch_assoc($res)) {
-         $ticket_users_keys[$current_tu['users_id']] = $current_tu['type'];
+         $ticket_users_keys[$current_tu['users_id']][] = $current_tu['type'];
       }
 
       return $ticket_users_keys;

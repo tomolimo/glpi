@@ -1747,7 +1747,8 @@ Regards,',
       MONTH_TIMESTAMP,
       [
          'comment'   => '',
-         'mode'      => CronTask::MODE_INTERNAL
+         'mode'      => CronTask::MODE_INTERNAL,
+         'state'     => CronTask::STATE_DISABLE
       ]
    );
    $migration->addConfig([
@@ -1769,17 +1770,17 @@ Regards,',
             $where = "`$tl_table`.itemtype = 'Ticket' AND `$tl_table`.`items_id` ";
          }
          $migration->addPostQuery("UPDATE `$tl_table`,
-				                              `glpi_tickets_users`
-                                   SET `$tl_table`.`timeline_position` = IF(`glpi_tickets_users`.`type` NOT IN (1,3) AND `glpi_tickets_users`.`type` IN (2), 4, 1)
+                                      `glpi_tickets_users`
+                                   SET `$tl_table`.`timeline_position` = IF(`glpi_tickets_users`.`type` NOT IN (1) AND `glpi_tickets_users`.`type` IN (2), 4, 1)
                                    WHERE $where = `glpi_tickets_users`.`tickets_id`
-	                                   AND `$tl_table`.`users_id` = `glpi_tickets_users`.`users_id`");
+                                     AND `$tl_table`.`users_id` = `glpi_tickets_users`.`users_id`");
          $migration->addPostQuery("UPDATE `$tl_table`,
-				                              `glpi_groups_tickets`,
-				                              `glpi_groups_users`
-                                   SET `$tl_table`.`timeline_position` = IF(`glpi_groups_tickets`.`type` NOT IN (1,3) AND `glpi_groups_tickets`.`type` IN (2), 4, 1)
+                                      `glpi_groups_tickets`,
+                                      `glpi_groups_users`
+                                   SET `$tl_table`.`timeline_position` = IF(`glpi_groups_tickets`.`type` NOT IN (1) AND `glpi_groups_tickets`.`type` IN (2), 4, 1)
                                    WHERE $where = `glpi_groups_tickets`.`tickets_id`
-	                                   AND `glpi_groups_users`.`groups_id` = `glpi_groups_tickets`.`groups_id`
-	                                   AND `$tl_table`.`users_id` = `glpi_groups_users`.`users_id`");
+                                     AND `glpi_groups_users`.`groups_id` = `glpi_groups_tickets`.`groups_id`
+                                     AND `$tl_table`.`users_id` = `glpi_groups_users`.`users_id`");
          $migration->addPostQuery("UPDATE  `$tl_table`
                                    SET `$tl_table`.`timeline_position` = 1
                                    WHERE `$tl_table`.`timeline_position` = 0");
