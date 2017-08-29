@@ -1080,8 +1080,7 @@ class Ticket extends DbTestCase {
 
    protected function _testGetTimelinePosition($tlp, $tickets_id) {
       foreach ($tlp as $users_name => $user) {
-         $auth = new \Auth();
-         $this->boolean((boolean)$auth->login($users_name, $user['pass'], true))->isTrue();
+         $this->login($users_name, $user['pass']);
          $uid = getItemByTypeName('User', $users_name, true);
 
          // TicketFollowup
@@ -1155,8 +1154,7 @@ class Ticket extends DbTestCase {
 
    protected function _testGetTimelinePositionSolution($tlp, $tickets_id) {
       foreach ($tlp as $users_name => $user) {
-         $auth = new \Auth();
-         $this->boolean((boolean)$auth->login($users_name, $user['pass'], true))->isTrue();
+         $this->login($users_name, $user['pass']);
          $uid = getItemByTypeName('User', $users_name, true);
 
          // Ticket Solution
@@ -1175,9 +1173,9 @@ class Ticket extends DbTestCase {
    }
 
    function testGetTimelinePosition() {
-      // login glpi
-      $auth = new \Auth();
-      $this->boolean((boolean)$auth->login('glpi', 'glpi', true))->isTrue();
+
+      // login TU_USER
+      $this->login();
 
       // create ticket
       // with post-only as requester
@@ -1216,9 +1214,8 @@ class Ticket extends DbTestCase {
 
       $tkt_id = $this->testGetTimelinePosition();
 
-      // login glpi
-      $auth = new \Auth();
-      $this->boolean((boolean)$auth->login('glpi', 'glpi', true))->isTrue();
+      // login TU_USER
+      $this->login();
 
       $ticket = new \Ticket();
       $this->boolean(
