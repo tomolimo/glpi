@@ -293,7 +293,7 @@ class TicketSolution extends DbTestCase {
       $ticket = $this->_createTicket();
 
       ob_start();
-      \TicketSolution::displayTabContentForItem($ticket);
+      $this->boolean(\TicketSolution::displayTabContentForItem($ticket))->isTrue();
       $ret = ob_get_clean();
       $regex="@^<table class='tab_cadre_fixe'><tr class='tab_bg_2'><th class='b'>No solution for this ticket\\.</th></tr></table>$@";
       $this->string($ret)->match($regex);
