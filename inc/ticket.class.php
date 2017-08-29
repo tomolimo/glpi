@@ -775,6 +775,9 @@ class Ticket extends CommonITILObject {
                      $fup = new TicketFollowup();
                      $fup->showApprobationForm($item);
                   }
+
+                  // show ticketsolution list
+                  TicketSolution::displayTabContentForItem($item);
                   break;
 
                case 3 :
@@ -6618,6 +6621,7 @@ class Ticket extends CommonITILObject {
       $task_obj              = new TicketTask();
       $document_item_obj     = new Document_Item();
       $ticket_valitation_obj = new TicketValidation();
+      $solution_obj          = new TicketSolution();
 
       //checks rights
       $showpublic = Session::haveRightsOr("followup", [TicketFollowup::SEEPUBLIC,
@@ -6675,44 +6679,20 @@ class Ticket extends CommonITILObject {
             = ['type' => 'Document_Item', 'item' => $item];
       }
 
-      //add existing solution
-      if (!empty($this->fields['solution'])
-         || !empty($this->fields['solutiontypes_id'])) {
-         $users_id      = 0;
-         $solution_date = $this->fields['solvedate'];
-
-         //search date and user of last solution in glpi_logs
-         if ($res_solution = $DB->query("SELECT `date_mod` AS solution_date, `user_name`, `id`
-                                         FROM `glpi_logs`
-                                         WHERE `itemtype` = 'Ticket'
-                                               AND `items_id` = ".$this->getID()."
-                                               AND `id_search_option` = 24
-                                         ORDER BY `id` DESC
-                                         LIMIT 1")) {
-            $data_solution = $DB->fetch_assoc($res_solution);
-            if (!empty($data_solution['solution_date'])) {
-                $solution_date = $data_solution['solution_date'];
-            }
-            // find user
-            if (!empty($data_solution['user_name'])) {
-               $users_id = addslashes(trim(preg_replace("/.*\(([0-9]+)\)/", "$1",
-                                                        $data_solution['user_name'])));
-            }
+      //add existing solutions
+      if ($solution_obj->canview()) {
+         $solutions = $solution_obj->find("tickets_id = ".$this->getID(), 'date_begin DESC');
+         foreach ($solutions as $solutions_id => $solution) {
+            // fix trouble with html_entity_decode which skips accented characters (on windows browser)
+            $solution_content = preg_replace_callback("/(&#[0-9]+;)/", function($m) {
+               return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES");
+            }, $solution['solution']);
+            $solution['can_edit']                                   = Ticket::canUpdate() && $this->canSolve() && $solution['approval'] == TicketSolution::SOLUTION_WAITING ;
+            $solution['content']                                    = Toolbox::unclean_cross_side_scripting_deep($solution_content);
+            unset($solution['solution']);
+            $timeline[$solution['date_begin']."_solution_".$solutions_id] = ['type' => 'TicketSolution',
+                                                                            'item' => $solution];
          }
-
-         // fix trouble with html_entity_decode who skip accented characters (on windows browser)
-         $solution_content = preg_replace_callback("/(&#[0-9]+;)/", function($m) {
-            return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES");
-         }, $this->fields['solution']);
-
-         $timeline[$solution_date."_solution"]
-            = ['type' => 'Solution',
-                    'item' => ['id'               => 0,
-                                    'content'          => Toolbox::unclean_cross_side_scripting_deep($solution_content),
-                                    'date'             => $solution_date,
-                                    'users_id'         => $users_id,
-                                    'solutiontypes_id' => $this->fields['solutiontypes_id'],
-                                    'can_edit'         => Ticket::canUpdate() && $this->canSolve()]];
       }
 
       // add ticket validation to timeline
@@ -6829,9 +6809,12 @@ class Ticket extends CommonITILObject {
          }
 
          //display solution in middle
-         if (($item['type'] == "Solution")
-              && in_array($this->fields["status"], [CommonITILObject::SOLVED, CommonITILObject::CLOSED])) {
-            $user_position.= ' middle';
+         if ($item['type'] == "TicketSolution") {
+              //&& in_array($this->fields["status"], [CommonITILObject::SOLVED, CommonITILObject::CLOSED])) {
+            if (in_array($item_i['approval'], [TicketSolution::SOLUTION_WAITING, TicketSolution::SOLUTION_APPROVED])) {
+               $user_position.= ' middle';
+            }
+            $date = $item_i['date_begin'];
          }
 
          echo "<div class='h_item $user_position'>";
@@ -7178,7 +7161,7 @@ class Ticket extends CommonITILObject {
          "'><span class='sr-only'>" . __('Document') . "</span></a></li>";
       echo "<li><a href='#' class='fa fa-thumbs-o-up pointer' data-type='TicketValidation' title='".__("Validation").
          "'><span class='sr-only'>" . __('Validation') . "</span></a></li>";
-      echo "<li><a href='#' class='fa fa-check pointer' data-type='Solution' title='".__("Solution").
+      echo "<li><a href='#' class='fa fa-check pointer' data-type='TicketSolution' title='".__("Solution").
          "'><span class='sr-only'>" . __('Solution')  . "</span></a></li>";
       echo "<li><a href='#' class='fa fa-ban pointer' data-type='reset' title=\"".__("Reset display options").
          "\"><span class='sr-only'>" . __('Reset display options')  . "</span></a></li>";
@@ -7430,4 +7413,11 @@ class Ticket extends CommonITILObject {
       return parent::getValueToSelect($field_id_or_search_options, $name, $values, $options);
    }
 
+   /**
+    * Summary of addOrUpdateSolution
+    * @since version 9.2
+   **/
+   function addOrUpdateSolution() {
+      TicketSolution::addOrUpdateSolution($this);
+   }
 }

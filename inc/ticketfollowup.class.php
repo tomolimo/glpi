@@ -411,6 +411,9 @@ class TicketFollowup  extends CommonDBTM {
          // Use update method for history
          $this->input["_job"]->update($update);
          $donotif = false; // Done for ticket update (new status)
+
+         // update TicketSolution
+         TicketSolution::approveSolution($this);
       }
 
       //manage reopening of ticket
@@ -438,6 +441,9 @@ class TicketFollowup  extends CommonDBTM {
          // Use update method for history
          $this->input["_job"]->update($update);
          $reopened     = true;
+
+         // update TicketSolution
+         TicketSolution::rejectSolution($this);
       }
 
       //change ticket status only if imput change

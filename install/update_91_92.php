@@ -1887,6 +1887,56 @@ Regards,',
    $migration->addKey('glpi_tasktemplates', 'users_id_tech');
    $migration->addKey('glpi_tasktemplates', 'groups_id_tech');
 
+   // glpi_ticketsolutions table
+   if (!$DB->tableExists('glpi_ticketsolutions')) {
+      $query = "CREATE TABLE `glpi_ticketsolutions` (
+                       `id` int(11) NOT NULL AUTO_INCREMENT,
+	                    `tickets_id` int(11) NOT NULL DEFAULT '0',
+	                    `date_begin` datetime NULL DEFAULT NULL,
+	                    `users_id` int(11) NOT NULL DEFAULT '0',
+	                    `solutiontemplates_id` int(11) NOT NULL DEFAULT '0',
+	                    `solutiontypes_id` int(11) NOT NULL DEFAULT '0',
+	                    `solution` longtext NULL,
+	                    `technical_solution` longtext NULL,
+	                    `users_id_approver` int(11) NOT NULL DEFAULT '0',
+	                    `approval` tinyint(1) NOT NULL DEFAULT '0',
+	                    `approval_comment` longtext NULL,
+	                    `date_answer` datetime NULL DEFAULT NULL,
+                       PRIMARY KEY (`id`),
+                       UNIQUE INDEX `tickets_id_date_begin` (`tickets_id`, `date_begin`),
+	                    INDEX `tickets_id` (`tickets_id`),
+	                    INDEX `date_begin` (`date_begin`),
+	                    INDEX `date_answer` (`date_answer`)
+                    ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+      $DB->queryOrDie($query, "9.2 add table glpi_ticketsolutions");
+
+      // migration of existing solutions into this new table
+      // will do it ticket by ticket
+      // will migrate all the ticket solution history
+      $query = "SELECT tkt.`id` AS id FROM `glpi_tickets` as tkt WHERE tkt.solution IS NOT NULL AND tkt.solution <> ''";
+      foreach ($DB->request($query) as $tkt) {
+         $query = "REPLACE INTO `glpi_ticketsolutions` (tickets_id, date_begin, approval, date_answer, users_id, approval_comment, users_id_approver, solutiontypes_id, solution)
+                     (SELECT tkt.`id` AS tickets_id,
+				                 IFNULL(glsolve.`date_mod`, tkt.`solvedate`) AS date_begin,
+				                 IF(IFNULL(glansw.`date_mod`, tkt.`closedate`) IS NULL, 1, IF(glansw.`new_value` = 6 OR (glansw.`new_value` IS NULL AND tkt.`closedate` IS NOT NULL), 3, 2)) AS approval,
+				                 IFNULL(glansw.`date_mod`, tkt.`closedate`) AS date_answer,
+				                 SUBSTRING_INDEX(SUBSTRING_INDEX(glsolve.`user_name`, '(', -1), ')', 1) AS users_id,
+				                 fup.`content` AS approval_comment,
+				                 fup.`users_id` AS users_id_approver,
+				                 IF(glsolvetype.`new_value` IS NOT NULL, SUBSTRING_INDEX(SUBSTRING_INDEX(glsolvetype.`new_value`, '(', -1), ')', 1), tkt.`solutiontypes_id`) AS solutiontypes_id,
+				                 IFNULL(glsolve.`new_value`, tkt.`solution`) AS solution
+	                  FROM `glpi_tickets` AS tkt
+	                  LEFT JOIN `glpi_logs` AS glsolve ON glsolve.`itemtype` = 'Ticket' AND glsolve.`items_id` = tkt.`id` AND glsolve.`id_search_option` = 24
+	                  LEFT JOIN `glpi_logs` AS glsolvetype ON glsolvetype.`id` = (SELECT MAX(`gl`.id) FROM `glpi_logs` AS gl WHERE gl.`itemtype` = 'Ticket' AND gl.`items_id` = tkt.`id` AND gl.`id_search_option` = 23 AND gl.`id` < glsolve.`id` GROUP BY gl.`items_id`)
+	                  LEFT JOIN `glpi_logs` AS glansw ON glansw.`id` = (SELECT MIN(gl.`id`) FROM `glpi_logs` AS gl WHERE gl.`itemtype` = 'Ticket' AND gl.`items_id` = tkt.`id` AND gl.`id_search_option` = 12 AND gl.`old_value` = 5 AND gl.`id` > glsolve.`id` GROUP BY gl.`items_id`)
+	                  LEFT JOIN `glpi_logs` AS glfup ON glfup.`id` = (SELECT MIN(gl.`id`) FROM `glpi_logs` AS gl WHERE gl.`itemtype` = 'Ticket' AND gl.`items_id` = tkt.`id` AND gl.`itemtype_link` = 'TicketFollowup' AND gl.`id` > glansw.`id` GROUP BY gl.`items_id`)
+	                  LEFT JOIN `glpi_ticketfollowups` AS fup ON fup.`id` = glfup.`new_value`
+	                  WHERE tkt.`id` = ".$tkt['id'].");";
+         $DB->queryOrDie($query, "9.2 migration of solutions into glpi_ticketsolutions table, can't insert ticket# ".$tkt['id']);
+      }
+
+   }
+
    // ************ Keep it at the end **************
    $migration->executeMigration();
 

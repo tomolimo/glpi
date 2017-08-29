@@ -857,6 +857,10 @@ abstract class CommonITILObject extends CommonDBTM {
             $this->fields['status'] = self::SOLVED;
             $this->input['status']  = self::SOLVED;
          }
+
+         // add or update item Solution
+         $this->addOrUpdateSolution();
+
       }
 
       // Check dates change interval due to the fact that second are not displayed in form
