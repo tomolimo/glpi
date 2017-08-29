@@ -6765,13 +6765,13 @@ class Ticket extends CommonITILObject {
 
          $timeline[$solution_date."_solution"]
             = ['type' => 'Solution',
-                     'item' => ['id'                => 0,
-                                      'content'           => Toolbox::unclean_cross_side_scripting_deep($solution_content),
-                                      'date'              => $solution_date,
-                                      'users_id'          => $users_id,
-                                      'solutiontypes_id'  => $this->fields['solutiontypes_id'],
-                                      'can_edit'          => Ticket::canUpdate() && $this->canSolve(),
-                                      'timeline_position' => self::TIMELINE_RIGHT]];
+               'item' => ['id'                => 0,
+                          'content'           => Toolbox::unclean_cross_side_scripting_deep($solution_content),
+                          'date'              => $solution_date,
+                          'users_id'          => $users_id,
+                          'solutiontypes_id'  => $this->fields['solutiontypes_id'],
+                          'can_edit'          => Ticket::canUpdate() && $this->canSolve(),
+                          'timeline_position' => self::TIMELINE_RIGHT]];
       }
 
       // add ticket validation to timeline
