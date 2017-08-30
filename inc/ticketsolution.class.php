@@ -154,6 +154,7 @@ class TicketSolution extends CommonDBTM {
 
       $tID = $ticket->fields['id'];
 
+      $showuserlink = 0;
       // Display existing Solutions
       if (User::canView()) {
          $showuserlink = 1;
@@ -174,7 +175,7 @@ class TicketSolution extends CommonDBTM {
 
       echo "<table class='tab_cadre_fixe'><tr class='tab_bg_2'>";
       if ($DB->numrows($result) == 0) {
-         echo "<th class='b'>" . __('No solution for this ticket.')."</th></tr></table>";
+         echo "<th class='b'>" . __('No solution history for this ticket.')."</th></tr></table>";
       } else {
          echo "<th class='b'><h3>" . __('Solution history')."</h3></th></tr></table>";
 
