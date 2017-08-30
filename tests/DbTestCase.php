@@ -75,7 +75,7 @@ class DbTestCase extends atoum {
    /**
     * Connect using the test user
     */
-   protected function login($user_name=TU_USER, $user_pass=TU_PASS) {
+   protected function login($user_name = TU_USER, $user_pass = TU_PASS) {
 
       $auth = new Auth();
       if (!$auth->login($user_name, $user_pass, true)) {
