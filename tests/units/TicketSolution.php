@@ -38,6 +38,76 @@ use \DbTestCase;
 
 class TicketSolution extends DbTestCase {
 
+   function _addSolution2Ticket($tkt, $sol_txt) {
+
+      $this->login('tech', 'tech');
+      // Ticket Solution
+      $this->boolean(
+         (boolean)$tkt->update([
+            'id'        => $tkt->getID(),
+            'solution'  => $sol_txt
+         ])
+      )->isEqualto(true);
+
+      $tl = $tkt->getTimelineItems();
+
+      // gets solution item
+      $tli = array_shift($tl);
+      $this->array($tli)
+         ->string['type']->isEqualTo('TicketSolution');
+
+      $this->array($tli['item'])
+            ->string['tickets_id']->isEqualTo($tkt->getID())
+            ->string['date_begin']->isEqualTo($_SESSION["glpi_currenttime"])
+            ->string['users_id']->isEqualTo('4')
+            ->string['solutiontemplates_id']->isEqualTo('0')
+            ->string['solutiontypes_id']->isEqualTo('0')
+            ->string['technical_solution']->isEqualTo('')
+            ->string['users_id_approver']->isEqualTo('0')
+            ->string['approval']->isEqualTo('3')
+            ->string['date_answer']->isEqualTo($_SESSION["glpi_currenttime"])
+            ->boolean['can_edit']->isFalse()
+            ->string['content']->isEqualTo($sol_txt);
+
+      $this->variable($tli['item']['approval_comment'])->isNull();
+   }
+
+
+   function _addUpdateSolution2Ticket($tkt, $sol_txt) {
+
+      $this->login('tech', 'tech');
+      // Ticket Solution
+      $this->boolean(
+         (boolean)$tkt->update([
+            'id'        => $tkt->getID(),
+            'solution'  => $sol_txt
+         ])
+      )->isEqualto(true);
+
+      $tl = $tkt->getTimelineItems();
+
+      // gets solution item
+      $tli = array_shift($tl);
+      $this->array($tli)
+         ->string['type']->isEqualTo('TicketSolution');
+
+      $this->array($tli['item'])
+            ->string['tickets_id']->isEqualTo($tkt->getID())
+            ->string['date_begin']->isEqualTo($_SESSION["glpi_currenttime"])
+            ->string['users_id']->isEqualTo('4')
+            ->string['solutiontemplates_id']->isEqualTo('0')
+            ->string['solutiontypes_id']->isEqualTo('0')
+            ->string['technical_solution']->isEqualTo('')
+            ->string['users_id_approver']->isEqualTo('0')
+            ->string['approval']->isEqualTo('1')
+            ->boolean['can_edit']->isTrue()
+            ->string['content']->isEqualTo($sol_txt);
+
+      $this->variable($tli['item']['date_answer'])->isNull();
+      $this->variable($tli['item']['approval_comment'])->isNull();
+   }
+
+
    function testAddOrUpdateSolution() {
 
       //
@@ -45,57 +115,10 @@ class TicketSolution extends DbTestCase {
       // entity is auto-close: immediat
       // add of a solution
       //
-
-      // login glpi
-      $auth = new \Auth();
-      $this->boolean((boolean)$auth->login('glpi', 'glpi', true))->isTrue();
-
-      // change entity auto-closing delay for tickets
-      // to be sure it's immediat
-      $re = new \Entity();
-      $this->boolean(
-         (boolean)$re->update([
-            'id' => 0, // the root entity
-            'autoclose_delay' => 0
-         ])
-      )->isEqualto(true);
-
       // create ticket
       $ticket = $this->_createTicket();
 
-
-      $this->boolean((boolean)$auth->login('tech', 'tech', true))->isTrue();
-      $uid = getItemByTypeName('User', 'tech', true);
-
-      // Ticket Solution
-      $this->boolean(
-         (boolean)$ticket->update([
-            'id'   => $ticket->getID(),
-            'solution'      => 'A simple solution from tech.'
-         ])
-      )->isEqualto(true);
-
-      $tl = $ticket->getTimelineItems();
-
-      // gets solution item
-      $tli = array_shift($tl);
-      $this->array($tli)
-         ->string['type']->isEqualTo('TicketSolution');
-
-      $this->array($tli['item'])
-            ->string['tickets_id']->isEqualTo($ticket->getID())
-            ->string['date_begin']->isEqualTo($_SESSION["glpi_currenttime"])
-            ->string['users_id']->isEqualTo('4')
-            ->string['solutiontemplates_id']->isEqualTo('0')
-            ->string['solutiontypes_id']->isEqualTo('0')
-            ->string['technical_solution']->isEqualTo('')
-            ->string['users_id_approver']->isEqualTo('0')
-            ->string['approval']->isEqualTo('3')
-            ->string['date_answer']->isEqualTo($_SESSION["glpi_currenttime"])
-            ->boolean['can_edit']->isFalse()
-            ->string['content']->isEqualTo('A simple solution from tech.');
-
-      $this->variable($tli['item']['approval_comment'])->isNull();
+      $this->_addSolution2Ticket($ticket, 'A simple solution 1 from tech.');
 
 
       //
@@ -103,205 +126,83 @@ class TicketSolution extends DbTestCase {
       // entity is auto-close: 1 day
       // add of a solution
       // update it
+      //
+      // create ticket
+      $ticket = $this->_createTicket();
 
-      // change entity auto-closing delay for tickets
-      // change to super-admin
-      $this->boolean((boolean)$auth->login('glpi', 'glpi', true))->isTrue();
+      // change entity auto-close delay for tickets
       $re = new \Entity();
       $this->boolean(
          (boolean)$re->update([
-            'id' => 0, // the root entity
+            'id' => $ticket->fields['entities_id'],
             'autoclose_delay' => 1
          ])
       )->isEqualto(true);
 
+      $this->_addUpdateSolution2Ticket($ticket, 'A simple solution 1 from tech.');
 
+      $this->_addUpdateSolution2Ticket($ticket, 'A simple solution 2 from tech.');
 
-      // create ticket
-      $ticket = $this->_createTicket();
-
-      $this->boolean((boolean)$auth->login('tech', 'tech', true))->isTrue();
-      $uid = getItemByTypeName('User', 'tech', true);
-
-      // Ticket Solution
-      $this->boolean(
-         (boolean)$ticket->update([
-            'id'   => $ticket->getID(),
-            'solution'      => 'A simple solution from tech.'
-         ])
-      )->isEqualto(true);
-
-      $tl = $ticket->getTimelineItems();
-
-      // gets solution item
-      $tli = array_shift($tl);
-      $this->array($tli)
-         ->string['type']->isEqualTo('TicketSolution');
-
-      $this->array($tli['item'])
-            ->string['tickets_id']->isEqualTo($ticket->getID())
-            ->string['date_begin']->isEqualTo($_SESSION["glpi_currenttime"])
-            ->string['users_id']->isEqualTo('4')
-            ->string['solutiontemplates_id']->isEqualTo('0')
-            ->string['solutiontypes_id']->isEqualTo('0')
-            ->string['technical_solution']->isEqualTo('')
-            ->string['users_id_approver']->isEqualTo('0')
-            ->string['approval']->isEqualTo('1')
-            ->boolean['can_edit']->isTrue()
-            ->string['content']->isEqualTo('A simple solution from tech.');
-
-      $this->variable($tli['item']['date_answer'])->isNull();
-      $this->variable($tli['item']['approval_comment'])->isNull();
-
-      $this->boolean((boolean)$auth->login('tech', 'tech', true))->isTrue();
-
-      // try to update the current solution
-      $this->boolean(
-         (boolean)$ticket->update([
-            'id'   => $ticket->getID(),
-            'solution'      => 'A simple solution 2 from tech.'
-         ])
-      )->isEqualto(true);
-
-      $tl = $ticket->getTimelineItems();
-
-      // gets solution item
-      $tli = array_shift($tl);
-      $this->array($tli)
-         ->string['type']->isEqualTo('TicketSolution');
-
-      $this->array($tli['item'])
-            ->string['tickets_id']->isEqualTo($ticket->getID())
-            ->string['date_begin']->isEqualTo($_SESSION["glpi_currenttime"])
-            ->string['users_id']->isEqualTo('4')
-            ->string['solutiontemplates_id']->isEqualTo('0')
-            ->string['solutiontypes_id']->isEqualTo('0')
-            ->string['technical_solution']->isEqualTo('')
-            ->string['users_id_approver']->isEqualTo('0')
-            ->string['approval']->isEqualTo('1')
-            ->boolean['can_edit']->isTrue()
-            ->string['content']->isEqualTo('A simple solution 2 from tech.');
-
-      $this->variable($tli['item']['date_answer'])->isNull();
-      $this->variable($tli['item']['approval_comment'])->isNull();
-
-      $date_begin1 = $_SESSION["glpi_currenttime"];
-
-      // refuse solution
-      // change to post-only
-      $this->boolean((boolean)$auth->login('post-only', 'postonly', true))->isTrue();
-
-      // create a followup to refused this solution
-      $fup = new \TicketFollowup();
-      $fup->add(['content' => 'Refused this solution', 'tickets_id' => $ticket->getID(), 'add_reopen' => 'Reject Solution', 'requesttypes_id' => 0]);
-
-      $tl = $ticket->getTimelineItems();
-
-      // gets solution item
-      array_shift($tl);
-      $tli = array_shift($tl);
-      $this->array($tli)
-         ->string['type']->isEqualTo('TicketSolution');
-
-      $this->array($tli['item'])
-            ->string['tickets_id']->isEqualTo($ticket->getID())
-            ->string['date_begin']->isEqualTo($date_begin1)
-            ->string['users_id']->isEqualTo('4')
-            ->string['solutiontemplates_id']->isEqualTo('0')
-            ->string['solutiontypes_id']->isEqualTo('0')
-            ->string['technical_solution']->isEqualTo('')
-            ->string['users_id_approver']->isEqualTo('3')
-            ->string['approval']->isEqualTo('2')
-            ->string['approval_comment']->isEqualTo('Refused this solution')
-            ->string['date_answer']->isEqualTo($_SESSION["glpi_currenttime"])
-            ->boolean['can_edit']->isFalse()
-            ->string['content']->isEqualTo('A simple solution 2 from tech.');
-
-
-      // add a new solution by tech
-      $this->boolean((boolean)$auth->login('tech', 'tech', true))->isTrue();
-
-      // add a solution
-      $this->boolean(
-         (boolean)$ticket->update([
-            'id'   => $ticket->getID(),
-            'solution'      => 'A complex solution from tech.'
-         ])
-      )->isEqualto(true);
-
-      $date_begin2 = $_SESSION["glpi_currenttime"];
-
-      // approve solution
-      // change to post-only
-      $this->boolean((boolean)$auth->login('post-only', 'postonly', true))->isTrue();
-
-      // create a followup to approve this solution
-      $fup = new \TicketFollowup();
-      $fup->add(['content' => 'Approved this solution', 'tickets_id' => $ticket->getID(), 'add_close' => 'Approve Solution', 'requesttypes_id' => 0]);
-
-      $tl = $ticket->getTimelineItems();
-
-      // gets solution item
-      array_shift($tl);
-      $tli = array_shift($tl);
-      $this->array($tli)
-         ->string['type']->isEqualTo('TicketSolution');
-
-      $this->array($tli['item'])
-            ->string['tickets_id']->isEqualTo($ticket->getID())
-            ->string['date_begin']->isEqualTo($date_begin2)
-            ->string['users_id']->isEqualTo('4')
-            ->string['solutiontemplates_id']->isEqualTo('0')
-            ->string['solutiontypes_id']->isEqualTo('0')
-            ->string['technical_solution']->isEqualTo('')
-            ->string['users_id_approver']->isEqualTo('3')
-            ->string['approval']->isEqualTo('3')
-            ->string['approval_comment']->isEqualTo('Approved this solution')
-            ->string['date_answer']->isEqualTo($_SESSION["glpi_currenttime"])
-            ->boolean['can_edit']->isFalse()
-            ->string['content']->isEqualTo('A complex solution from tech.');
-
-      // change entity auto-closing back to immediat for tickets
-      // change to super-admin
-      $this->boolean((boolean)$auth->login('glpi', 'glpi', true))->isTrue();
-      $re = new \Entity();
-      $this->boolean(
-         (boolean)$re->update([
-            'id' => 0, // the root entity
-            'autoclose_delay' => 0
-         ])
-      )->isEqualto(true);
-
-
-      // let's have a look at the html
-      ob_start();
-      \TicketSolution::displayTabContentForItem($ticket);
-      $ret = ob_get_clean();
-      $date_begin1 = substr($date_begin1, 0, strrpos($date_begin1, ':'));
-      $regex="@^<table class='tab_cadre_fixe'><tr class='tab_bg_2'><th class='b'><h3>Solution history</h3></th></tr></table><h3>Today</h3><div class='boxnote bytech' id='viewsolution[0-9]+'><div class='boxnoteleft'><img class='user_picture_verysmall' alt=\"Picture\" src='/glpi/pics/picture_min\\.png'></div><div class='boxnotecontent'><div class='boxnotefloatright'>Created by <a title=\"tech\" href='/glpi/front/user\\.form\\.php\\?id=4'>tech</a> on $date_begin1</div><div class='boxnotetext '>A simple solution 2 from tech\\.</div></div><div class='boxnoteright'></div></div>$@";
-      $this->string($ret)->match($regex);
-      echo '';
    }
 
 
    function testDisplayTabContentForItem() {
-      // login glpi
-      $auth = new \Auth();
-      $this->boolean((boolean)$auth->login('glpi', 'glpi', true))->isTrue();
 
       // create ticket
       $ticket = $this->_createTicket();
 
+      // test an empty solution ticket
       ob_start();
       $this->boolean(\TicketSolution::displayTabContentForItem($ticket))->isTrue();
       $ret = ob_get_clean();
-      $regex="@^<table class='tab_cadre_fixe'><tr class='tab_bg_2'><th class='b'>No solution for this ticket\\.</th></tr></table>$@";
+      $regex="@^<table class='tab_cadre_fixe'><tr class='tab_bg_2'><th class='b'>No solution history for this ticket\\.</th></tr></table>$@";
       $this->string($ret)->match($regex);
 
+      // test a ticket with two solutions (a rejected one and an approved one)
+      // change entity auto-close delay for tickets
+      $re = new \Entity();
+      $this->boolean(
+         (boolean)$re->update([
+            'id' => $ticket->fields['entities_id'],
+            'autoclose_delay' => 1
+         ])
+      )->isEqualto(true);
+
+      $this->_addUpdateSolution2Ticket($ticket, 'A simple solution 1 from tech.');
+      $date_first_solution = substr($_SESSION["glpi_currenttime"], 0, strrpos($_SESSION["glpi_currenttime"], ':'));
+
+      $this->_rejectOrAcceptSolution($ticket, '2', 'Refused this solution', 'A simple solution 1 from tech.');
+
+      $this->_addUpdateSolution2Ticket($ticket, 'A complex solution from tech.');
+
+      $this->_rejectOrAcceptSolution($ticket, '3', 'Approved this solution', 'A complex solution from tech.');
+
+      $this->login();
+
+      // let's have a look at the html
+      ob_start();
+      $this->boolean(\TicketSolution::displayTabContentForItem($ticket))->isTrue();
+      $ret = ob_get_clean();
+      $regex="@^<table class='tab_cadre_fixe'><tr class='tab_bg_2'><th class='b'><h3>Solution history</h3></th></tr></table><h3>Today</h3><div class='boxnote bytech' id='viewsolution[0-9]+'><div class='boxnoteleft'><img class='user_picture_verysmall' alt=\"Picture\" src='/glpi/pics/picture_min\\.png'></div><div class='boxnotecontent'><div class='boxnotefloatright'>Created by <a title=\"tech\" href='/glpi/front/user\\.form\\.php\\?id=4'>tech</a> on $date_first_solution</div><div class='boxnotetext '>A simple solution 1 from tech\\.</div></div><div class='boxnoteright'></div></div>$@";
+      $this->string($ret)->match($regex);
 
    }
 
+
    function _createTicket() {
+
+      // login TU_USER
+      $this->login();
+
+      //add entity
+      $re = new \Entity();
+      $this->boolean(
+         (boolean)$re->add([
+            'name' => 'multi-solutions entity '.rand(),
+            'entities_id' => '0'
+         ])
+      )->isEqualto(true);
+
       // create ticket
       // with post-only as requester
       // tech as assigned to
@@ -311,10 +212,110 @@ class TicketSolution extends DbTestCase {
             'name'                => 'ticket title',
             'description'         => 'a description',
             'content'             => '',
+            'entities_id'         => $re->getID(),
             '_users_id_requester' => '3', // post-only
             '_users_id_observer'  => '5', // normal
             '_users_id_assign'    => ['4', '5'] // tech and normal
       ] ))->isGreaterThan(0);
+
       return $ticket;
+
    }
+
+
+   function _rejectOrAcceptSolution($ticket, $status, $fu_content, $txt_sol) {
+
+      //
+      // refuse solution
+      //
+      // change to post-only
+      $this->login('post-only', 'postonly');
+
+      // create a followup to refused this solution
+      $fup = new \TicketFollowup();
+      if ($status == '2') {
+         $options = ['add_reopen' => 'Reject'];
+      } else {
+         $options = ['add_close' => 'Approve'];
+      }
+      $options = array_merge( $options, ['content' => $fu_content, 'tickets_id' => $ticket->getID(),  'requesttypes_id' => 0]);
+      $fup->add($options);
+
+      $tl = $ticket->getTimelineItems();
+
+      // gets latest solution item
+      $tl = array_filter($tl, function($var) { return $var['type'] == 'TicketSolution'; } );
+      $tli = array_shift($tl);
+      $this->array($tli)
+         ->string['type']->isEqualTo('TicketSolution');
+
+      $this->array($tli['item'])
+            ->string['tickets_id']->isEqualTo($ticket->getID())
+            ->string['users_id']->isEqualTo('4')
+            ->string['solutiontemplates_id']->isEqualTo('0')
+            ->string['solutiontypes_id']->isEqualTo('0')
+            ->string['technical_solution']->isEqualTo('')
+            ->string['users_id_approver']->isEqualTo('3')
+            ->string['approval']->isEqualTo($status)
+            ->string['approval_comment']->isEqualTo($fu_content)
+            ->string['date_answer']->isEqualTo($_SESSION["glpi_currenttime"])
+            ->boolean['can_edit']->isFalse()
+            ->string['content']->isEqualTo($txt_sol);
+   }
+
+
+   function testRejectAcceptSolution() {
+
+      $ticket = $this->_createTicket();
+
+      // change entity auto-close delay for tickets
+      $re = new \Entity();
+      $this->boolean(
+         (boolean)$re->update([
+            'id' => $ticket->fields['entities_id'],
+            'autoclose_delay' => 1
+         ])
+      )->isEqualto(true);
+
+      $this->_addUpdateSolution2Ticket($ticket, 'A simple solution 1 from tech.');
+
+      $this->_rejectOrAcceptSolution($ticket, '2', 'Refused this solution', 'A simple solution 1 from tech.');
+
+      $this->_addUpdateSolution2Ticket($ticket, 'A complex solution from tech.');
+
+      $this->_rejectOrAcceptSolution($ticket, '3', 'Approved this solution', 'A complex solution from tech.');
+
+   }
+
+
+   function testShowForm() {
+      // create ticket
+      $ticket = $this->_createTicket();
+      $tkt_solution = new \TicketSolution();
+
+      // let's have a look at the html
+      ob_start();
+      $tkt_solution->showForm(0, ['parent' => $ticket]);
+      $ret = ob_get_clean();
+      $regex="@<div id='solution\\d+'><textarea id='solution\\d+' name='solution' rows='12' cols='80'>N/A</textarea></div>@";
+      $this->string($ret)->match($regex);
+
+      // change entity auto-close delay for tickets
+      $re = new \Entity();
+      $this->boolean(
+         (boolean)$re->update([
+            'id' => $ticket->fields['entities_id'],
+            'autoclose_delay' => 1
+         ])
+      )->isEqualto(true);
+
+      $this->_addUpdateSolution2Ticket($ticket, 'A simple solution 1 from tech.');
+
+      ob_start();
+      $tkt_solution->showForm(null, ['parent' => $ticket]);
+      $ret = ob_get_clean();
+      $regex="@<div id='solution\\d+'><textarea id='solution\\d+' name='solution' rows='12' cols='80'>A simple solution 1 from tech\\.</textarea></div>@";
+      $this->string($ret)->match($regex);
+   }
+
 }
