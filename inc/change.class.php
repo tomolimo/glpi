@@ -197,9 +197,9 @@ class Change extends CommonITILObject {
          switch ($item->getType()) {
             case __CLASS__ :
                $ong = [1 => __('Analysis'),
-                            3 => __('Plans'),
-                            //Solution must be index 2
-                            2 => __('Solution')];
+                       3 => __('Plans'),
+                       //Solution must be index 2
+                       2 => _n('Solution', 'Solutions', Solution::countFor('Change', $this->getID()))];
                if ($item->canUpdate()) {
                   $ong[4] = __('Statistics');
                }

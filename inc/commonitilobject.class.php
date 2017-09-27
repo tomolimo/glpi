@@ -153,6 +153,23 @@ abstract class CommonITILObject extends CommonDBTM {
 
 
    /**
+    * Does current user have right to solve the current ticket ?
+    *
+    * @return boolean
+   **/
+   function canSolve() {
+
+      return ((Session::haveRight(static::$rightname, UPDATE)
+               || $this->isUser(CommonITILActor::ASSIGN, Session::getLoginUserID())
+               || (isset($_SESSION["glpigroups"])
+                   && $this->haveAGroup(CommonITILActor::ASSIGN, $_SESSION["glpigroups"])))
+              && self::isAllowedStatus($this->fields['status'], self::SOLVED)
+              // No edition on closed status
+              && !in_array($this->fields['status'], $this->getClosedStatusArray()));
+   }
+
+
+   /**
     * Is a user linked to the object ?
     *
     * @param $type               type to search (see constants)

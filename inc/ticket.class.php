@@ -356,23 +356,6 @@ class Ticket extends CommonITILObject {
 
 
    /**
-    * Is the current user have right to solve the current ticket ?
-    *
-    * @return boolean
-   **/
-   function canSolve() {
-
-      return ((Session::haveRight(self::$rightname, UPDATE)
-               || $this->isUser(CommonITILActor::ASSIGN, Session::getLoginUserID())
-               || (isset($_SESSION["glpigroups"])
-                   && $this->haveAGroup(CommonITILActor::ASSIGN, $_SESSION["glpigroups"])))
-              && self::isAllowedStatus($this->fields['status'], self::SOLVED)
-              // No edition on closed status
-              && !in_array($this->fields['status'], $this->getClosedStatusArray()));
-   }
-
-
-   /**
     * Is the current user have right to approve solution of the current ticket ?
     *
     * @return boolean
@@ -803,7 +786,7 @@ class Ticket extends CommonITILObject {
 
             if (!$_SESSION['glpiticket_timeline']
                 || $_SESSION['glpiticket_timeline_keep_replaced_tabs']) {
-               $ong[2] = _n('Solution', 'Solutions', 1);
+               $ong[2] = _n('Solution', 'Solutions', Solution::countFor('Ticket', $this->getID()));
             }
             // enquete si statut clos
             $satisfaction = new TicketSatisfaction();
