@@ -6758,56 +6758,19 @@ class Ticket extends CommonITILObject {
          $timeline[$solution_item['date_creation']."_solution"] = [
             'type' => 'Solution',
             'item' => [
-               'id'                => 0,
-               'content'           => Toolbox::unclean_cross_side_scripting_deep($solution_content),
-               'date'              => $solution_item['date_creation'],
-               'users_id'          => $solution_item['users_id'],
-               'solutiontypes_id'  => $solution_item['solutiontypes_id'],
-               'can_edit'          => Ticket::canUpdate() && $this->canSolve(),
-               'timeline_position' => self::TIMELINE_RIGHT
+               'id'                 => $solution_item['id'],
+               'content'            => Toolbox::unclean_cross_side_scripting_deep($solution_content),
+               'date'               => $solution_item['date_creation'],
+               'users_id'           => $solution_item['users_id'],
+               'solutiontypes_id'   => $solution_item['solutiontypes_id'],
+               'can_edit'           => Ticket::canUpdate() && $this->canSolve(),
+               'timeline_position'  => self::TIMELINE_RIGHT,
+               'users_id_editor'    => $solution_item['users_id_editor'],
+               'date_mod'           => $solution_item['date_mod'],
+               'is_rejected'        => $solution_item['is_rejected']
             ]
          ];
       }
-      //add existing solution
-      /*if (!empty($this->fields['solution'])
-         || !empty($this->fields['solutiontypes_id'])) {
-         $users_id      = 0;
-         $solution_date = $this->fields['solvedate'];
-
-         //search date and user of last solution in glpi_logs
-         if ($res_solution = $DB->query("SELECT `date_mod` AS solution_date, `user_name`, `id`
-                                         FROM `glpi_logs`
-                                         WHERE `itemtype` = 'Ticket'
-                                               AND `items_id` = ".$this->getID()."
-                                               AND `id_search_option` = 24
-                                         ORDER BY `id` DESC
-                                         LIMIT 1")) {
-            $data_solution = $DB->fetch_assoc($res_solution);
-            if (!empty($data_solution['solution_date'])) {
-                $solution_date = $data_solution['solution_date'];
-            }
-            // find user
-            if (!empty($data_solution['user_name'])) {
-               $users_id = addslashes(trim(preg_replace("/.*\(([0-9]+)\)/", "$1",
-                                                        $data_solution['user_name'])));
-            }
-         }
-
-         // fix trouble with html_entity_decode who skip accented characters (on windows browser)
-         $solution_content = preg_replace_callback("/(&#[0-9]+;)/", function($m) {
-            return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES");
-         }, $this->fields['solution']);
-
-         $timeline[$solution_date."_solution"]
-            = ['type' => 'Solution',
-               'item' => ['id'                => 0,
-                          'content'           => Toolbox::unclean_cross_side_scripting_deep($solution_content),
-                          'date'              => $solution_date,
-                          'users_id'          => $users_id,
-                          'solutiontypes_id'  => $this->fields['solutiontypes_id'],
-                          'can_edit'          => Ticket::canUpdate() && $this->canSolve(),
-                          'timeline_position' => self::TIMELINE_RIGHT]];
-      }*/
 
       // add ticket validation to timeline
       if ((($this->fields['type'] == Ticket::DEMAND_TYPE)
@@ -6930,7 +6893,7 @@ class Ticket extends CommonITILObject {
          }
 
          //display solution in middle
-         if (($item['type'] == "Solution")
+         if (($item['type'] == "Solution") && $item_i['is_rejected'] == 0
               && in_array($this->fields["status"], [CommonITILObject::SOLVED, CommonITILObject::CLOSED])) {
             $user_position.= ' middle';
          }
@@ -6970,8 +6933,14 @@ class Ticket extends CommonITILObject {
          }
          $domid .= $rand;
 
-         echo "<div class='h_content ".$item['type'].
-               ((isset($item_i['status'])) ? " ".$item_i['status'] : "")."'".
+         $class = "h_content {$item['type']}";
+         if (isset($item_i['status'])) {
+            $class .= " {$item_i['status']}";
+         }
+         if ($item['type'] == 'Solution' && $item_i['is_rejected'] == 1) {
+            $class .= " rejected";
+         }
+         echo "<div class='$class'".
                " id='$domid'>";
          if (isset($item_i['can_edit']) && $item_i['can_edit']) {
             echo "<div class='edit_item_content'></div>";
@@ -7073,8 +7042,12 @@ class Ticket extends CommonITILObject {
             echo "<div class='users_id_editor' id='users_id_editor_".$item_i['users_id_editor']."'>";
             $user->getFromDB($item_i['users_id_editor']);
             $userdata = getUserName($item_i['users_id_editor'], 2);
+            $message = __('Last edited on %1$s by %2$s');
+            if (isset($item_i['is_rejected']) && $item_i['is_rejected'] == 1) {
+               $message = __('Rejected on %1$s by %2$s');
+            }
             echo sprintf(
-               __('Last edited on %1$s by %2$s'),
+               $message,
                Html::convDateTime($item_i['date_mod']),
                $user->getLink()
             );

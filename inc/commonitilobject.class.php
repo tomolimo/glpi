@@ -1201,14 +1201,16 @@ abstract class CommonITILObject extends CommonDBTM {
          $this->getClosedStatusArray()
       );
       if (($key = array_search('status', $this->updates)) !== false
-         && !in_array($this->oldvalues['status'], $statuses)
-         && in_array($this->fields['status'], $statuses)
+         && in_array($this->oldvalues['status'], $statuses)
+         && !in_array($this->fields['status'], $statuses)
       ) {
          //Mark existing solutions as rejected
          $query = "UPDATE `" . Solution::getTable() . "`
-            SET `is_rejected`=1
+            SET `is_rejected`=1, `users_id_editor`=" . Session::getLoginUserID() . ",
+            `date_mod`='". date('Y-m-d H:i:s') ."'
                WHERE `itemtype`='" . static::getType() . "'
-               AND `items_id`=" . $this->getID();
+               AND `items_id`=" . $this->getID() . "
+               AND `is_rejected`=0";
          $DB->query($query);
       }
 

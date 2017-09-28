@@ -3476,6 +3476,10 @@ a.copyright {
    background-repeat: no-repeat;
 }
 
+.timeline_history .h_content.Solution.rejected {
+   background-image: url(../pics/timeline/solution-rej.png);
+}
+
 .timeline_history .h_content.Document_Item,
 .timeline_history .h_content.Assign {
    border: none;
