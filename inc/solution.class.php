@@ -48,14 +48,25 @@ class Solution extends CommonDBTM {
       return _n('Solution', 'Solutions', $nb);
    }
 
+   public static function canUpdate() {
+      //FIXME
+      return true;
+   }
+
    public static function canCreate() {
+      //FIXME
       return true;
    }
 
    public function canCreateItem() {
-      $item = new $this->fields['itemtype'];
-      $item->getFromDB($this->fields['items_id']);
-      return $item->canSolve();
+      if ($this->isNewItem()) {
+         $item = new $this->fields['itemtype'];
+         $item->getFromDB($this->fields['items_id']);
+         return $item->canSolve();
+      } else {
+         //FIXME
+         return true;
+      }
    }
 
    function canEdit($ID) {
@@ -249,6 +260,8 @@ class Solution extends CommonDBTM {
          'id'     => $this->item->getID(),
          'status' => $status
       ]);
-      Ticket_Ticket::manageLinkedTicketsOnSolved($this->item->getID());
+      if ($this->item->getType() == 'Ticket') {
+         Ticket_Ticket::manageLinkedTicketsOnSolved($this->item->getID(), $this);
+      }
    }
 }

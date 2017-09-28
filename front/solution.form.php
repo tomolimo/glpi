@@ -42,6 +42,7 @@ Session::checkLoginUser();
 
 $solution = new Solution();
 $track = new $_POST['itemtype'];
+$track->getFromDB($_POST['items_id']);
 
 if (isset($_POST["add"])) {
    $solution->check(-1, CREATE, $_POST);
@@ -60,10 +61,8 @@ if (isset($_POST["add"])) {
       }
    }
    Html::back();
-
-/*} else if (isset($_POST['update'])) {
+} else if (isset($_POST['update'])) {
    $solution->check($_POST['id'], UPDATE);
-
    $solution->update($_POST);
 
    if (isset($_POST['kb_linked_id'])) {
@@ -88,15 +87,15 @@ if (isset($_POST["add"])) {
               sprintf(__('%s updates an item'), $_SESSION["glpiname"]));
 
 
-   if ($track->can($_POST["id"], READ)) {
+   if ($track->can($_POST["items_id"], READ)) {
       $toadd = '';
       // Copy solution to KB redirect to KB
       if (isset($_POST['_sol_to_kb']) && $_POST['_sol_to_kb']) {
          $toadd = "&_sol_to_kb=1";
       }
-      Html::redirect($CFG_GLPI["root_doc"]."/front/ticket.form.php?id=".$_POST["id"].$toadd);
+      Html::redirect($CFG_GLPI["root_doc"]."/front/ticket.form.php?id=".$_POST["items_id"].$toadd);
    }
    Session::addMessageAfterRedirect(__('You have been redirected because you no longer have access to this ticket'),
                                     true, ERROR);
-   Html::redirect($CFG_GLPI["root_doc"]."/front/ticket.php");*/
+   Html::redirect($CFG_GLPI["root_doc"]."/front/ticket.php");
 }
