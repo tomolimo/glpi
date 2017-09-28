@@ -1072,11 +1072,6 @@ class Ticket extends CommonITILObject {
                 $allowed_fields[] = 'name';
                 $allowed_fields[] = 'items_id';
             }
-
-            if ($this->canSolve()) {
-                $allowed_fields[] = 'solutiontypes_id';
-                $allowed_fields[] = 'solution';
-            }
          }
 
          foreach ($allowed_fields as $field) {
@@ -1625,13 +1620,6 @@ class Ticket extends CommonITILObject {
             }
          }
 
-         // Setting a solution type means the ticket is solved
-         if ((in_array("solutiontypes_id", $this->updates)
-              || in_array("solution", $this->updates))
-             && (isset($this->input["status"])
-                 && (in_array($this->input["status"], $this->getSolvedStatusArray())
-                     || in_array($this->input["status"], $this->getClosedStatusArray())))) { // auto close case
-            Ticket_Ticket::manageLinkedTicketsOnSolved($this->fields['id']);
          }
 
          // Clean content to mail
