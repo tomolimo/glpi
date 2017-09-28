@@ -855,35 +855,6 @@ abstract class CommonITILObject extends CommonDBTM {
       // get again object to reload actors
       $this->loadActors();
 
-      // Setting a solution or solution type means the problem is solved
-      /*if ((in_array("solutiontypes_id", $this->updates) && ($this->input["solutiontypes_id"] > 0))
-          || (in_array("solution", $this->updates) && !empty($this->input["solution"]))) {
-
-         if (!in_array('status', $this->updates)) {
-            $this->oldvalues['status'] = $this->fields['status'];
-            $this->updates[]           = 'status';
-         }
-
-         // Special case for Ticket : use autoclose
-         if ($this->getType() == 'Ticket') {
-            $autoclosedelay =  Entity::getUsedConfig('autoclose_delay', $this->getEntityID(), '',
-                                                     Entity::CONFIG_NEVER);
-
-            // 0 = immediatly
-            if ($autoclosedelay == 0) {
-               $this->fields['status'] = self::CLOSED;
-               $this->input['status']  = self::CLOSED;
-            } else {
-               $this->fields['status'] = self::SOLVED;
-               $this->input['status']  = self::SOLVED;
-            }
-
-         } else {
-            $this->fields['status'] = self::SOLVED;
-            $this->input['status']  = self::SOLVED;
-         }
-      }*/
-
       // Check dates change interval due to the fact that second are not displayed in form
       if ((($key = array_search('date', $this->updates)) !== false)
           && (substr($this->fields["date"], 0, 16) == substr($this->oldvalues['date'], 0, 16))) {

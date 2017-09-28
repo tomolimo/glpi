@@ -44,9 +44,6 @@ class Solution extends CommonDBTM {
    public $dohistory                   = true;
    private $item                       = null;
 
-   //static $rightname                   = 'solution';
-   //protected $usenotepad               = true;
-
    static function getTypeName($nb = 0) {
       return _n('Solution', 'Solutions', $nb);
    }

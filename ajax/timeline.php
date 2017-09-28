@@ -70,7 +70,6 @@ switch ($_REQUEST['action']) {
          if (!isset($_REQUEST['load_kb_sol'])) {
             $_REQUEST['load_kb_sol'] = 0;
          }
-         /*$ticket->showSolutionForm($_REQUEST['load_kb_sol']);*/
 
          $sol_params = [
             'item'         => $ticket,
