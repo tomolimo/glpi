@@ -248,5 +248,6 @@ class Solution extends CommonDBTM {
          'id'     => $this->item->getID(),
          'status' => $status
       ]);
+      Ticket_Ticket::manageLinkedTicketsOnSolved($this->item->getID());
    }
 }
