@@ -850,12 +850,13 @@ abstract class CommonITILObject extends CommonDBTM {
 
 
    function pre_updateInDB() {
+      global $DB;
 
       // get again object to reload actors
       $this->loadActors();
 
       // Setting a solution or solution type means the problem is solved
-      if ((in_array("solutiontypes_id", $this->updates) && ($this->input["solutiontypes_id"] > 0))
+      /*if ((in_array("solutiontypes_id", $this->updates) && ($this->input["solutiontypes_id"] > 0))
           || (in_array("solution", $this->updates) && !empty($this->input["solution"]))) {
 
          if (!in_array('status', $this->updates)) {
@@ -881,7 +882,7 @@ abstract class CommonITILObject extends CommonDBTM {
             $this->fields['status'] = self::SOLVED;
             $this->input['status']  = self::SOLVED;
          }
-      }
+      }*/
 
       // Check dates change interval due to the fact that second are not displayed in form
       if ((($key = array_search('date', $this->updates)) !== false)
@@ -1192,6 +1193,23 @@ abstract class CommonITILObject extends CommonDBTM {
       if (in_array("closedate", $this->updates)) {
          $this->updates[]                  = "close_delay_stat";
          $this->fields['close_delay_stat'] = $this->computeCloseDelayStat();
+      }
+
+      //Look for reopening
+      $statuses = array_merge(
+         $this->getSolvedStatusArray(),
+         $this->getClosedStatusArray()
+      );
+      if (($key = array_search('status', $this->updates)) !== false
+         && !in_array($this->oldvalues['status'], $statuses)
+         && in_array($this->fields['status'], $statuses)
+      ) {
+         //Mark existing solutions as rejected
+         $query = "UPDATE `" . Solution::getTable() . "`
+            SET `is_rejected`=1
+               WHERE `itemtype`='" . static::getType() . "'
+               AND `items_id`=" . $this->getID();
+         $DB->query($query);
       }
 
       // Do not take into account date_mod if no update is done

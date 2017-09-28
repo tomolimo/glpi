@@ -6745,8 +6745,31 @@ class Ticket extends CommonITILObject {
             = ['type' => 'Document_Item', 'item' => $item];
       }
 
+      $solution_obj = new Solution();
+      $solution_items = $solution_obj->find(
+         "`itemtype`='" . self::getType() . "' AND `items_id`='" . $this->getID() . "'"
+      );
+      foreach ($solution_items as $solution_item) {
+         // fix trouble with html_entity_decode who skip accented characters (on windows browser)
+         $solution_content = preg_replace_callback("/(&#[0-9]+;)/", function($m) {
+            return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES");
+         }, $solution_item['content']);
+
+         $timeline[$solution_item['date_creation']."_solution"] = [
+            'type' => 'Solution',
+            'item' => [
+               'id'                => 0,
+               'content'           => Toolbox::unclean_cross_side_scripting_deep($solution_content),
+               'date'              => $solution_item['date_creation'],
+               'users_id'          => $solution_item['users_id'],
+               'solutiontypes_id'  => $solution_item['solutiontypes_id'],
+               'can_edit'          => Ticket::canUpdate() && $this->canSolve(),
+               'timeline_position' => self::TIMELINE_RIGHT
+            ]
+         ];
+      }
       //add existing solution
-      if (!empty($this->fields['solution'])
+      /*if (!empty($this->fields['solution'])
          || !empty($this->fields['solutiontypes_id'])) {
          $users_id      = 0;
          $solution_date = $this->fields['solvedate'];
@@ -6784,7 +6807,7 @@ class Ticket extends CommonITILObject {
                           'solutiontypes_id'  => $this->fields['solutiontypes_id'],
                           'can_edit'          => Ticket::canUpdate() && $this->canSolve(),
                           'timeline_position' => self::TIMELINE_RIGHT]];
-      }
+      }*/
 
       // add ticket validation to timeline
       if ((($this->fields['type'] == Ticket::DEMAND_TYPE)

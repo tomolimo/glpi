@@ -42,6 +42,7 @@ class Solution extends CommonDBTM {
 
    // From CommonDBTM
    public $dohistory                   = true;
+   private $item                       = null;
 
    //static $rightname                   = 'solution';
    //protected $usenotepad               = true;
@@ -218,5 +219,37 @@ class Solution extends CommonDBTM {
             ]
          ]
       );
+   }
+
+   function prepareInputForAdd($input) {
+      $input['users_id'] = Session::getLoginUserID();
+      return $input;
+   }
+
+   function post_addItem() {
+      //adding a solution mean the ITIL object is now closed
+      if ($this->item == null) {
+         $this->item = new $this->fields['itemtype'];
+         $this->item->getFromDB($this->fields['items_id']);
+      }
+
+      $status = $this->item::SOLVED;
+      if ($this->item->getType() == 'Ticket') {
+         $autoclosedelay =  Entity::getUsedConfig(
+            'autoclose_delay',
+            $this->item->getEntityID(),
+            '',
+            Entity::CONFIG_NEVER
+         );
+
+         // 0 = immediatly
+         if ($autoclosedelay == 0) {
+            $status = $this->item::CLOSED;
+         }
+      }
+      $this->item->update([
+         'id'     => $this->item->getID(),
+         'status' => $status
+      ]);
    }
 }
