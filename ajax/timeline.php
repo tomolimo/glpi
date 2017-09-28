@@ -77,6 +77,9 @@ switch ($_REQUEST['action']) {
          ];
 
          $solution = new Solution();
+         if (isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
+            $solution->getFromDB($_REQUEST['id']);
+         }
          $solution->showForm(null, $sol_params);
 
          // show approbation form on top when ticket is solved

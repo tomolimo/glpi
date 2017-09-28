@@ -80,12 +80,13 @@ class Solution extends CommonDBTM {
    function showForm($ID, $options = []) {
       global $CFG_GLPI;
 
-      $this->getEmpty();
+      if ($this->isNewItem()) {
+         $this->getEmpty();
+      }
       $item = $options['item'];
       $this->item = $item;
       $item->check($item->getID(), READ);
 
-      $close_warning = false;
       if ($item instanceof Ticket && $this->isNewItem()) {
          $ti = new Ticket_Ticket();
          $open_child = $ti->countOpenChildren($item->getID());
