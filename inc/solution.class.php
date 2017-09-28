@@ -264,4 +264,22 @@ class Solution extends CommonDBTM {
          Ticket_Ticket::manageLinkedTicketsOnSolved($this->item->getID(), $this);
       }
    }
+
+   /**
+    * Remove solutions for an item
+    *
+    * @param string  $itemtype Item type
+    * @param integer $items_id Item ID
+    *
+    * @return void
+    */
+   public function removeForItem($itemtype, $items_id) {
+      $this->deleteByCriteria(
+         [
+            'itemtype'  => $itemtype,
+            'items_id'  => $items_id
+         ],
+         true
+      );
+   }
 }

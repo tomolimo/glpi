@@ -598,6 +598,9 @@ abstract class CommonITILObject extends CommonDBTM {
          $class = new $this->supplierlinkclass();
          $class->cleanDBonItemDelete($this->getType(), $this->fields['id']);
       }
+
+      $solution = new Solution();
+      $solution->removeForItem($this->getType(), $this->getID());
    }
 
 
