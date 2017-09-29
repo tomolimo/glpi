@@ -2279,6 +2279,11 @@ a.icon_nav_move:hover img {
    background: #e7e7e2;
 }
 
+.accepted {
+   background-color:#9FD6ED;
+   color:#425B64;
+}
+
 /* ################--------------- box (redirect and other)  ---------------#################### */
 .ui-widget-content.message_after_redirect {
    font-family:"Myriad Pro","Myriad Web","Tahoma","Helvetica","Arial",sans-serif;

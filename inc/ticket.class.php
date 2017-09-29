@@ -784,10 +784,6 @@ class Ticket extends CommonITILObject {
                $ong[1]      = __("Processing ticket")." <sup class='tab_nb'>$nb_elements</sup>";
             }
 
-            if (!$_SESSION['glpiticket_timeline']
-                || $_SESSION['glpiticket_timeline_keep_replaced_tabs']) {
-               $ong[2] = _n('Solution', 'Solutions', Solution::countFor('Ticket', $this->getID()));
-            }
             // enquete si statut clos
             $satisfaction = new TicketSatisfaction();
             if ($satisfaction->getFromDB($item->getID())
@@ -879,6 +875,11 @@ class Ticket extends CommonITILObject {
          $this->addStandardTab('Document_Item', $ong, $options);
       }
       $this->addStandardTab(__CLASS__, $ong, $options);
+      if (!$_SESSION['glpiticket_timeline']
+         || $_SESSION['glpiticket_timeline_keep_replaced_tabs']) {
+         $this->addStandardTab('Solution', $ong, $options);
+      }
+
       $this->addStandardTab('TicketValidation', $ong, $options);
       $this->addStandardTab('KnowbaseItem_Item', $ong, $options);
       $this->addStandardTab('Item_Ticket', $ong, $options);
@@ -6913,7 +6914,7 @@ class Ticket extends CommonITILObject {
             echo "</div>"; // h_user
          }
 
-         echo "</div>"; //h_date
+         echo "</div>"; //h_info
 
          $domid = "viewitem{$item['type']}{$item_i['id']}";
          if ($item['type'] == 'TicketValidation' && isset($item_i['status'])) {

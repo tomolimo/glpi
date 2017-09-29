@@ -48,12 +48,36 @@ class Solution extends CommonDBTM {
       return _n('Solution', 'Solutions', $nb);
    }
 
+   function getTabNameForItem(CommonGLPI $item, $withtemplate = 0) {
+      if ($item->isNewItem()) {
+         return;
+      }
+      if (static::canView()) {
+         $nb    = 0;
+         $title = self::getTypeName(Session::getPluralNumber());
+         if ($_SESSION['glpishow_count_on_tabs']) {
+            $nb = self::countFor($item->getType(), $this->getID());
+         }
+         return self::createTabEntry($title, $nb);
+      }
+   }
+
+   static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0) {
+      $sol = new self();
+      $sol->showSummary($item);
+   }
+
    public static function canUpdate() {
       //FIXME
       return true;
    }
 
    public static function canCreate() {
+      //FIXME
+      return true;
+   }
+
+   public static function canView() {
       //FIXME
       return true;
    }
@@ -281,5 +305,137 @@ class Solution extends CommonDBTM {
          ],
          true
       );
+   }
+
+   /**
+    * Show solutions for an item
+    *
+    * @param CommonITILObject $item Item instance
+    *
+    * return void
+    */
+   public function showSummary(CommonITILObject $item) {
+      global $DB, $CFG_GLPI;
+
+      if (isset($_GET["start"])) {
+         $start = intval($_GET["start"]);
+      } else {
+         $start = 0;
+      }
+
+      $where = [
+         'itemtype'  => $item->getType(),
+         'items_id'  => $item->getID()
+      ];
+
+      $number = countElementsInTable(
+         self::getTable(),
+         $where
+       );
+
+      // No solutions in database
+      if ($number < 1) {
+         $no_txt = sprintf(__('No solutions for this %1$s'), $item->getTypeName(1));
+         echo "<div class='center'>";
+         echo "<table class='tab_cadre_fixe'>";
+         echo "<tr class='tab_bg_2'><th class='b'>$no_txt</th></tr>";
+         echo "</table>";
+         echo "</div>";
+         return;
+      }
+      // Display the pager
+
+      // Output events
+      echo "<div class='center'>";
+
+      $rand   = mt_rand();
+      $solutions = $DB->request(
+         self::getTable(),
+         $where + ['ORDER' => 'id DESC']
+      );
+
+      foreach ($solutions as $solution) {
+         $options = [
+            'parent' => $item,
+            'rand'   => $rand
+         ];
+         Plugin::doHook('pre_show_item', ['item' => $this, 'options' => &$options]);
+
+         $user = new User();
+         $user->getFromDB($solution['users_id']);
+
+         $class = '';
+         if ($solution['is_rejected'] == 0) {
+            $class .= " accepted";
+         }
+
+         echo "<div class='boxnote$class' id='viewitemSolution{$solution['id']}$rand'>";
+
+         echo "<div class='boxnoteleft center'>";
+         echo "<img class='user_picture_verysmall' alt='' src='" . User::getThumbnailURLForPicture($user->fields['picture'])."'>";
+
+         echo "<br/><span class='h_user_name'>";
+         $userdata = getUserName($solution['users_id'], 2);
+         echo $user->getLink()."&nbsp;";
+         echo Html::showToolTip($userdata["comment"],
+                                 ['link' => $userdata['link']]);
+         echo "</span>";
+
+         echo "</div>"; // boxnoteleft
+
+         echo "<div class='boxnotecontent'>";
+
+         echo "<div class='boxnotefloatright right'>";
+         echo "<div class='h_date'><i class='fa fa-clock-o'></i>".Html::convDateTime($solution['date_creation'])."</div>";
+         if (!empty($solution['solutiontypes_id'])) {
+            echo Dropdown::getDropdownName("glpi_solutiontypes", $solution['solutiontypes_id'])."<br>";
+         }
+
+         if (isset($solution['users_id_editor']) && $solution['users_id_editor'] > 0) {
+            echo "<div class='users_id_editor' id='users_id_editor_".$solution['users_id_editor']."'>";
+            $user->getFromDB($solution['users_id_editor']);
+            $message = __('Last edited on %1$s by %2$s');
+            if ($solution['is_rejected'] == 1) {
+               $message = __('Rejected on %1$s by %2$s');
+            }
+            echo sprintf(
+               $message,
+               Html::convDateTime($solution['date_mod']),
+               $user->getLink()
+            );
+            echo "</div>";
+         }
+         echo "</div>"; // boxnotefloatright
+
+         $content = $solution['content'];
+         $content = autolink($content, 40);
+
+         $long_text = "";
+         if ((substr_count($content, "<br") > 30) || (strlen($content) > 2000)) {
+            $long_text = "long_text";
+         }
+
+         echo "<div class='item_content $long_text'>";
+         echo "<p>";
+
+         if ($CFG_GLPI["use_rich_text"]) {
+            echo html_entity_decode($content);
+         } else {
+            echo $content;
+         }
+         echo "</p>";
+
+         if (!empty($long_text)) {
+            echo "<p class='read_more'>";
+            echo "<a class='read_more_button'>.....</a>";
+            echo "</p>";
+         }
+         echo "</div>";
+
+         echo "</div>"; // boxnotecontent
+         echo "</div>"; // boxnote
+
+         Plugin::doHook('post_show_item', ['item' => $this, 'options' => $options]);
+      }
    }
 }
