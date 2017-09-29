@@ -324,16 +324,28 @@ class Solution extends CommonDBTM {
       }
 
       $can_edit = self::canUpdate() || $item->canSolve();
+      $can_add  = !in_array($item->fields["status"],
+                     array_merge($item->getSolvedStatusArray(), $item->getClosedStatusArray()))
+            && Ticket::canUpdate() && $item->canSolve();
       $where = [
          'itemtype'  => $item->getType(),
          'items_id'  => $item->getID()
       ];
 
+      $rand   = mt_rand();
       $number = countElementsInTable(
          self::getTable(),
          $where
-       );
+      );
 
+      // Not closed ticket or closed
+      if ($can_add) {
+         echo "<div id='addbutton".$item->getID() . "$rand' class='center firstbloc'>".
+               "<a class='vsubmit' href='javascript:viewAddSubitem".$item->getID()."$rand(\"Solution\");'>";
+         echo __('Add a new solution');
+         echo "</a></div>\n";
+
+      }
       // No solutions in database
       if ($number < 1) {
          $no_txt = sprintf(__('No solutions for this %1$s'), $item->getTypeName(1));
@@ -349,7 +361,6 @@ class Solution extends CommonDBTM {
       // Output events
       echo "<div class='center'>";
 
-      $rand   = mt_rand();
       $solutions = $DB->request(
          self::getTable(),
          $where + ['ORDER' => 'id DESC']
@@ -443,11 +454,37 @@ class Solution extends CommonDBTM {
          Plugin::doHook('post_show_item', ['item' => $this, 'options' => $options]);
       }
 
+      $js = '';
+      if ($can_add) {
+         echo "<div class='ajax_box' id='viewitem" . $item->getID() . "$rand'></div>\n";
+         $js .= "function viewAddSubitem" . $item->getID() . "$rand(itemtype) {\n";
+         $params = [
+            'action'     => 'viewsubitem',
+            'type'       => 'itemtype',
+            'parenttype' => 'Ticket',
+            'tickets_id' => $item->getID(),
+            'id'         => -1
+         ];
+         if (isset($_GET['load_kb_sol'])) {
+            $params['load_kb_sol'] = $_GET['load_kb_sol'];
+         }
+         $out = Ajax::updateItemJsCode(
+            "viewitem" . $item->getID() . "$rand",
+            $CFG_GLPI["root_doc"]."/ajax/timeline.php",
+            $params,
+            "",
+            false
+         );
+         $js .= str_replace("\"itemtype\"", "itemtype", $out);
+         $js .= "};";
+      }
       if ($can_edit) {
-         $js = "function viewEditSubitem" . $item->getID() . "$rand(e, itemtype, items_id, o, domid) {
+         $js .= "function viewEditSubitem" . $item->getID() . "$rand(e, itemtype, items_id, o, domid) {
             domid = (typeof domid === 'undefined')
                         ? 'viewitem".$item->getID().$rand."'
                         : domid;
+            console.log(domid);
+            console.log($('#'+domid));
             var target = e.target || window.event.srcElement;
             if (target.nodeName == 'a') return;
             if (target.className == 'read_more_button') return;
@@ -474,6 +511,8 @@ class Solution extends CommonDBTM {
 
 
          };";
+      }
+      if ($js != '') {
          echo Html::scriptBlock($js);
       }
    }
