@@ -323,6 +323,7 @@ class Solution extends CommonDBTM {
          $start = 0;
       }
 
+      $can_edit = self::canUpdate() || $item->canSolve();
       $where = [
          'itemtype'  => $item->getType(),
          'items_id'  => $item->getID()
@@ -383,7 +384,11 @@ class Solution extends CommonDBTM {
 
          echo "</div>"; // boxnoteleft
 
-         echo "<div class='boxnotecontent'>";
+         echo "<div class='boxnotecontent'";
+         if ($can_edit) {
+            echo " onclick='javascript:viewEditSubitem".$item->getID()."$rand(event, \"Solution\", ".$solution['id'].", this, \"viewitemSolution".$solution['id'].$rand."\")'";
+         }
+         echo ">";
 
          echo "<div class='boxnotefloatright right'>";
          echo "<div class='h_date'><i class='fa fa-clock-o'></i>".Html::convDateTime($solution['date_creation'])."</div>";
@@ -412,10 +417,10 @@ class Solution extends CommonDBTM {
 
          $long_text = "";
          if ((substr_count($content, "<br") > 30) || (strlen($content) > 2000)) {
-            $long_text = "long_text";
+            $long_text = " long_text";
          }
 
-         echo "<div class='item_content $long_text'>";
+         echo "<div class='item_content$long_text'>";
          echo "<p>";
 
          if ($CFG_GLPI["use_rich_text"]) {
@@ -436,6 +441,40 @@ class Solution extends CommonDBTM {
          echo "</div>"; // boxnote
 
          Plugin::doHook('post_show_item', ['item' => $this, 'options' => $options]);
+      }
+
+      if ($can_edit) {
+         $js = "function viewEditSubitem" . $item->getID() . "$rand(e, itemtype, items_id, o, domid) {
+            domid = (typeof domid === 'undefined')
+                        ? 'viewitem".$item->getID().$rand."'
+                        : domid;
+            var target = e.target || window.event.srcElement;
+            if (target.nodeName == 'a') return;
+            if (target.className == 'read_more_button') return;
+            $('#'+domid).addClass('edited');
+            $('#'+domid+' > *').hide();
+            $('#'+domid+' .cancel_edit_item_content').show()
+                                                      .click(function() {
+                                                         $(this).hide();
+                                                         $('#'+domid).removeClass('edited');
+                                                         $('#'+domid+' .edit_item_content').empty().hide();
+                                                         $('#'+domid+' .displayed_content').show();
+                                                      });
+
+            var _editor = $('<div class=\'edit_item_content\'></div>');
+            $('#'+domid).append(_editor);
+            $('#'+domid+' .edit_item_content').show()
+                                                .load('".$CFG_GLPI["root_doc"]."/ajax/timeline.php',
+                                                      {'action'    : 'viewsubitem',
+                                                      'type'      : itemtype,
+                                                      'parenttype': 'Ticket',
+                                                      'tickets_id': ".$item->getID().",
+                                                      'id'        : items_id
+                                                      });
+
+
+         };";
+         echo Html::scriptBlock($js);
       }
    }
 }
