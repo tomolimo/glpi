@@ -4973,8 +4973,11 @@ abstract class CommonITILObject extends CommonDBTM {
       global $DB;
 
       $query = "SELECT DISTINCT `solutiontypes_id`
-                FROM `".$this->getTable()."`
-                WHERE NOT `".$this->getTable()."`.`is_deleted` ".
+                FROM `".ITILSolution::getTable()."`
+                INNER JOIN `".$this->getTable()."`
+                  ON `".$this->getTable().".`id` = `".ITILSolution::getTable()."`.`items_id`
+                WHERE `".ITILSolution::getTable()."`.`itemtype`='".$this->getType()."'
+                  AND NOT `".$this->getTable()."`.`is_deleted` ".
                       getEntitiesRestrictRequest("AND", $this->getTable());
 
       if (!empty($date1) || !empty($date2)) {
