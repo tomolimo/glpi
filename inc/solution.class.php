@@ -266,7 +266,8 @@ class Solution extends CommonDBTM {
          $this->item->getFromDB($this->fields['items_id']);
       }
 
-      $status = $this->item::SOLVED;
+      $item = $this->item;
+      $status = $item::SOLVED;
       if ($this->item->getType() == 'Ticket') {
          $autoclosedelay =  Entity::getUsedConfig(
             'autoclose_delay',
@@ -277,7 +278,7 @@ class Solution extends CommonDBTM {
 
          // 0 = immediatly
          if ($autoclosedelay == 0) {
-            $status = $this->item::CLOSED;
+            $status = $item::CLOSED;
          }
       }
       $this->item->update([
