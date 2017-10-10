@@ -2899,17 +2899,28 @@ abstract class CommonITILObject extends CommonDBTM {
          'table'              => 'glpi_solutiontypes',
          'field'              => 'name',
          'name'               => __('Solution type'),
-         'datatype'           => 'dropdown'
+         'datatype'           => 'dropdown',
+         'joinparams'         => [
+            'beforejoin'         => [
+               'table'              => 'glpi_solutions',
+               'joinparams'         => [
+                  'jointype'           => 'itemtype_item',
+               ]
+            ]
+         ]
       ];
 
       $tab[] = [
          'id'                 => '24',
-         'table'              => $this->getTable(),
-         'field'              => 'solution',
+         'table'              => 'glpi_solutions',
+         'field'              => 'content',
          'name'               => _n('Solution', 'Solutions', 1),
          'datatype'           => 'text',
          'htmltext'           => true,
-         'massiveaction'      => false
+         'massiveaction'      => false,
+         'joinparams'         => [
+            'jointype'           => 'itemtype_item'
+         ]
       ];
 
       return $tab;
