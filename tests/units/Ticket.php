@@ -151,7 +151,6 @@ class Ticket extends DbTestCase {
 
       $this->boolean($ticket->isNewItem())->isFalse();
       $this->variable($ticket->getField('status'))->isIdenticalTo($ticket::ASSIGNED);
-      $ticketId = $ticket->getID();
 
       $this->_testTicketUser(
          $ticket,
@@ -161,15 +160,19 @@ class Ticket extends DbTestCase {
          ''
       );
 
-      $ticket->update([
-         'id' => $ticket->getID(),
-         'solution'  => 'Current friendly ticket\r\nis solved!'
-      ]);
+      $solution = new \Solution();
+      $this->integer(
+         (int)$solution->add([
+            'itemtype'  => $ticket::getType(),
+            'items_id'  => $ticket->getID(),
+            'content'   => 'Current friendly ticket\r\nis solved!'
+         ])
+      );
       //reload from DB
       $this->boolean($ticket->getFromDB($ticket->getID()))->isTrue();
 
       $this->variable($ticket->getField('status'))->isEqualTo($ticket::CLOSED);
-      $this->string($ticket->getField('solution'))->isIdenticalTo("Current friendly ticket\r\nis solved!");
+      $this->string($solution->getField('content'))->isIdenticalTo('Current friendly ticket\r\nis solved!');
    }
 
    protected function _testTicketUser(\Ticket $ticket, $actor, $role, $notify, $alternateEmail) {
