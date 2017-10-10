@@ -3475,6 +3475,7 @@ a.copyright {
 }
 
 .timeline_history .h_content.Solution {
+   border-left: 1em green solid;
    background-color: #9FD6ED;
    color: #425B64;
    background-image: url(../pics/timeline/solution.png);
@@ -3482,6 +3483,7 @@ a.copyright {
 }
 
 .timeline_history .h_content.Solution.rejected {
+   border-left: 1em red solid;
    background-image: url(../pics/timeline/solution-rej.png);
 }
 
