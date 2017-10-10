@@ -6732,7 +6732,7 @@ class Ticket extends CommonITILObject {
             = ['type' => 'Document_Item', 'item' => $item];
       }
 
-      $solution_obj = new Solution();
+      $solution_obj = new ITILSolution();
       $solution_items = $solution_obj->find(
          "`itemtype`='" . self::getType() . "' AND `items_id`='" . $this->getID() . "'"
       );

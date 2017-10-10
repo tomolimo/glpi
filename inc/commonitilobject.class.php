@@ -599,7 +599,7 @@ abstract class CommonITILObject extends CommonDBTM {
          $class->cleanDBonItemDelete($this->getType(), $this->fields['id']);
       }
 
-      $solution = new Solution();
+      $solution = new ITILSolution();
       $solution->removeForItem($this->getType(), $this->getID());
    }
 
@@ -1179,7 +1179,7 @@ abstract class CommonITILObject extends CommonDBTM {
          && !in_array($this->fields['status'], $statuses)
       ) {
          //Mark existing solutions as rejected
-         $query = "UPDATE `" . Solution::getTable() . "`
+         $query = "UPDATE `" . ITILSolution::getTable() . "`
             SET `is_rejected`=1, `users_id_editor`=" . Session::getLoginUserID() . ",
             `date_mod`='". date('Y-m-d H:i:s') ."'
                WHERE `itemtype`='" . static::getType() . "'
@@ -2902,7 +2902,7 @@ abstract class CommonITILObject extends CommonDBTM {
          'datatype'           => 'dropdown',
          'joinparams'         => [
             'beforejoin'         => [
-               'table'              => 'glpi_solutions',
+               'table'              => ITILSolution::getTable(),
                'joinparams'         => [
                   'jointype'           => 'itemtype_item',
                ]
@@ -2912,7 +2912,7 @@ abstract class CommonITILObject extends CommonDBTM {
 
       $tab[] = [
          'id'                 => '24',
-         'table'              => 'glpi_solutions',
+         'table'              => ITILSolution::getTable(),
          'field'              => 'content',
          'name'               => _n('Solution', 'Solutions', 1),
          'datatype'           => 'text',

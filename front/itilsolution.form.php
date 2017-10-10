@@ -40,7 +40,7 @@ include ('../inc/includes.php');
 
 Session::checkLoginUser();
 
-$solution = new Solution();
+$solution = new ITILSolution();
 $track = new $_POST['itemtype'];
 $track->getFromDB($_POST['items_id']);
 

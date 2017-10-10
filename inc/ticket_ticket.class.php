@@ -380,7 +380,7 @@ class Ticket_Ticket extends CommonDBRelation {
       $ticket = new Ticket();
 
       if ($ticket->getfromDB($ID)) {
-         $solution = new Solution();
+         $solution = new ITILSolution();
          $solution_data =$solution->fields;
          unset($solution_data['id']);
 

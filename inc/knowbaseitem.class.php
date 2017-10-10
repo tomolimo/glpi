@@ -670,7 +670,7 @@ class KnowbaseItem extends CommonDBVisible {
          if ($item = getItemForItemtype($options['item_itemtype'])) {
             if ($item->getFromDB($options['item_items_id'])) {
                $this->fields['name']   = $item->getField('name');
-               $solution = new Solution();
+               $solution = new ITILSolution();
                $solution->getFromDBByCrit([
                   'itemtype'     => $item->getType(),
                   'items_id'     => $item->getID(),

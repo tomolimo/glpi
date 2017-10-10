@@ -76,7 +76,7 @@ switch ($_REQUEST['action']) {
             'kb_id_toload' => $_REQUEST['load_kb_sol']
          ];
 
-         $solution = new Solution();
+         $solution = new ITILSolution();
          if (isset($_REQUEST['id']) && (int)$_REQUEST['id'] > 0) {
             $solution->getFromDB($_REQUEST['id']);
          }

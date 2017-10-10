@@ -8084,9 +8084,9 @@ CREATE TABLE `glpi_solutiontypes` (
 ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 
-### Dump table glpi_solutions
-DROP TABLE IF EXISTS `glpi_solutions`;
-CREATE TABLE `glpi_solutions` (
+### Dump table glpi_itilsolutions
+DROP TABLE IF EXISTS `glpi_itilsolutions`;
+CREATE TABLE `glpi_itilsolutions` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `itemtype` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
   `items_id` int(11) NOT NULL DEFAULT '0',

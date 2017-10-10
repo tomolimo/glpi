@@ -52,8 +52,8 @@ function update92to93() {
    $migration->setVersion('9.3');
 
    //Create solutions table
-   if (!$DB->tableExists('glpi_solutions')) {
-      $query = "CREATE TABLE `glpi_solutions` (
+   if (!$DB->tableExists('glpi_itilsolutions')) {
+      $query = "CREATE TABLE `glpi_itilsolutions` (
          `id` int(11) NOT NULL AUTO_INCREMENT,
          `itemtype` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
          `items_id` int(11) NOT NULL DEFAULT '0',
@@ -73,7 +73,7 @@ function update92to93() {
          KEY `users_id_editor` (`users_id_editor`),
          KEY `is_rejected` (`is_rejected`)
          ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
-      $DB->queryOrDie($query, "9.3 add table glpi_solutions");
+      $DB->queryOrDie($query, "9.3 add table glpi_itilsolutions");
    }
 
    //Migrate to new  solutions
@@ -82,7 +82,7 @@ function update92to93() {
       'Change',
       'Problem'
    ];
-   $solution = new Solution();
+   $solution = new ITILSolution();
    foreach ($solutions_itemtypes as $itemtype) {
       $table = $dbutils->getTableForItemType($itemtype);
       if ($DB->fieldExists($table, 'solution')) {

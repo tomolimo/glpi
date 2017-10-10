@@ -36,9 +36,9 @@ if (!defined('GLPI_ROOT')) {
 
 
 /**
- * Solution Class
+ * ITILSolution Class
 **/
-class Solution extends CommonDBTM {
+class ITILSolution extends CommonDBTM {
 
    // From CommonDBTM
    public $dohistory                   = true;
