@@ -160,7 +160,7 @@ class Ticket extends DbTestCase {
          ''
       );
 
-      $solution = new \Solution();
+      $solution = new \ITILSolution();
       $this->integer(
          (int)$solution->add([
             'itemtype'  => $ticket::getType(),
