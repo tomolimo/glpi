@@ -52,7 +52,7 @@ class ITILSolution extends CommonDBTM {
       if ($item->isNewItem()) {
          return;
       }
-      if (static::canView()) {
+      if ($item->maySolve()) {
          $nb    = 0;
          $title = self::getTypeName(Session::getPluralNumber());
          if ($_SESSION['glpishow_count_on_tabs']) {
@@ -68,39 +68,33 @@ class ITILSolution extends CommonDBTM {
    }
 
    public static function canUpdate() {
-      //FIXME
+      //always true, will rely on ITILSolution::canUpdateItem
       return true;
+   }
+
+   public function canUpdateItem() {
+      return $this->item->maySolve();
    }
 
    public static function canCreate() {
-      //always true, will rely on self::canCreateItem
-      return true;
-   }
-
-   public static function canView() {
-      //FIXME
+      //always true, will rely on ITILSolution::canCreateItem
       return true;
    }
 
    public function canCreateItem() {
-      if ($this->isNewItem()) {
-         $item = new $this->fields['itemtype'];
-         $item->getFromDB($this->fields['items_id']);
-         return $item->canSolve();
-      } else {
-         //FIXME
-         return true;
-      }
+      $item = new $this->fields['itemtype'];
+      $item->getFromDB($this->fields['items_id']);
+      return $item->canSolve();
    }
 
    function canEdit($ID) {
-      if ($this->isNewItem()) {
-         return $this->item->canSolve();
-      } else {
-         return parent::canEdit($ID);
-      }
+      return $this->item->maySolve();
    }
 
+   function post_getFromDB() {
+      $this->item = new $this->fields['itemtype'];
+      $this->item->getFromDB($this->fields['items_id']);
+   }
 
    /**
     * Print the phone form
@@ -135,7 +129,7 @@ class ITILSolution extends CommonDBTM {
          }
       }
 
-      $canedit = $item->canSolve();
+      $canedit = $item->maySolve();
       $options = [];
 
       if (isset($options['kb_id_toload']) && $options['kb_id_toload'] > 0) {
@@ -329,7 +323,7 @@ class ITILSolution extends CommonDBTM {
          $start = 0;
       }
 
-      $can_edit = self::canUpdate() || $item->canSolve();
+      $can_edit = $item->maySolve();
       $can_add  = !in_array($item->fields["status"],
                      array_merge($item->getSolvedStatusArray(), $item->getClosedStatusArray()))
             && Ticket::canUpdate() && $item->canSolve();

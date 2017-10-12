@@ -153,7 +153,7 @@ abstract class CommonITILObject extends CommonDBTM {
 
 
    /**
-    * Does current user have right to solve the current ticket ?
+    * Does current user have right to solve the current item?
     *
     * @return boolean
    **/
@@ -167,6 +167,21 @@ abstract class CommonITILObject extends CommonDBTM {
               // No edition on closed status
               && !in_array($this->fields['status'], $this->getClosedStatusArray()));
    }
+
+   /**
+    * Does current user have right to solve the current item; if it was not closed?
+    *
+    * @return boolean
+   **/
+   function maySolve() {
+
+      return ((Session::haveRight(static::$rightname, UPDATE)
+               || $this->isUser(CommonITILActor::ASSIGN, Session::getLoginUserID())
+               || (isset($_SESSION["glpigroups"])
+                   && $this->haveAGroup(CommonITILActor::ASSIGN, $_SESSION["glpigroups"])))
+              && self::isAllowedStatus($this->fields['status'], self::SOLVED));
+   }
+
 
 
    /**

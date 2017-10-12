@@ -65,6 +65,7 @@ if (isset($_POST["add"])) {
       $handled = true;
    }
 } else if (isset($_POST['update'])) {
+   $solution->getFromDB($_POST['id']);
    $solution->check($_POST['id'], UPDATE);
    $solution->update($_POST);
    $handled = true;
