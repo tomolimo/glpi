@@ -199,7 +199,7 @@ class Change extends CommonITILObject {
                $ong = [1 => __('Analysis'),
                        3 => __('Plans'),
                        //Solution must be index 2
-                       2 => _n('Solution', 'Solutions', ITILSolution::countFor('Change', $this->getID()))];
+                       2 => _n('Solution', 'Solutions', ITILSolution::countFor('Change', $item->getID()))];
                if ($item->canUpdate()) {
                   $ong[4] = __('Statistics');
                }

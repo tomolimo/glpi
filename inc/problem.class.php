@@ -179,7 +179,7 @@ class Problem extends CommonITILObject {
          switch ($item->getType()) {
             case __CLASS__ :
                $ong = [1 => __('Analysis'),
-                       2 => _n('Solution', 'Solutions', ITILSolution::countFor('Problem', $this->getID()))];
+                       2 => _n('Solution', 'Solutions', ITILSolution::countFor('Problem', $item->getID()))];
 
                if ($item->canUpdate()) {
                   $ong[4] = __('Statistics');
@@ -192,7 +192,7 @@ class Problem extends CommonITILObject {
       switch ($item->getType()) {
          case __CLASS__ :
             return [1 => __('Analysis'),
-                    2 => _n('Solution', 'Solutions', ITILSolution::countFor('Problem', $this->getID())),
+                    2 => _n('Solution', 'Solutions', ITILSolution::countFor('Problem', $item->getID())),
                     4 => __('Statistics')];
       }
       return '';
