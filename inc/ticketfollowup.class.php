@@ -886,9 +886,9 @@ class TicketFollowup  extends CommonDBTM {
          echo "<script type='text/javascript' >\n";
          echo "function viewAddFollowup" . $ticket->fields['id'] . "$rand() {\n";
          $params = ['type'       => __CLASS__,
-                         'parenttype' => 'Ticket',
-                         'tickets_id' => $ticket->fields['id'],
-                         'id'         => -1];
+                    'parenttype' => 'Ticket',
+                    'tickets_id' => $ticket->fields['id'],
+                    'id'         => -1];
          Ajax::updateItemJsCode("viewfollowup" . $ticket->fields['id'] . "$rand",
                                 $CFG_GLPI["root_doc"]."/ajax/viewsubitem.php", $params);
          echo Html::jsHide('addbutton'.$ticket->fields['id'] . "$rand");

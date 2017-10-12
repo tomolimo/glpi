@@ -212,7 +212,7 @@ class Problem extends CommonITILObject {
                   if (!isset($_GET['load_kb_sol'])) {
                      $_GET['load_kb_sol'] = 0;
                   }
-                  $item->showSolutionForm($_GET['load_kb_sol']);
+                  $item->showSolutions($_GET['load_kb_sol']);
                   break;
 
                case 4 :

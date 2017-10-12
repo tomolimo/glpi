@@ -4190,119 +4190,15 @@ abstract class CommonITILObject extends CommonDBTM {
     * @param $knowbase_id_toload integer  load a kb article as solution (0 = no load by default)
     *                                     (default 0)
    **/
-   function showSolutionForm($knowbase_id_toload = 0) {
+   function showSolutions($knowbase_id_toload = 0) {
       global $CFG_GLPI;
 
-      $this->check($this->getField('id'), READ);
-
-      $close_warning = false;
-      if ($this instanceof Ticket) {
-         $ti = new Ticket_Ticket();
-         $open_child = $ti->countOpenChildren($this->getID());
-         if ($open_child > 0) {
-            echo "<div class='tab_cadre_fixe warning'>" . __('Warning: non closed children tickets depends on current ticket. Are you sure you want to close it?')  . "</div>";
-         }
-      }
-
-      $canedit = $this->canSolve();
-      $options = [];
-
-      if ($knowbase_id_toload > 0) {
-         $kb = new KnowbaseItem();
-         if ($kb->getFromDB($knowbase_id_toload)) {
-            $this->fields['solution'] = $kb->getField('answer');
-         }
-      }
-
-      // Alert if validation waiting
-      $validationtype = $this->getType().'Validation';
-      if (method_exists($validationtype, 'alertValidation')) {
-         $validationtype::alertValidation($this, 'solution');
-      }
-
-      $this->showFormHeader($options);
-
-      $show_template = $canedit;
-      $rand_template = mt_rand();
-      $rand_text     = $rand_type = 0;
-      if ($canedit) {
-         $rand_text = mt_rand();
-         $rand_type = mt_rand();
-      }
-      if ($show_template) {
-         echo "<tr class='tab_bg_2'>";
-         echo "<td>"._n('Solution template', 'Solution templates', 1)."</td><td>";
-
-         SolutionTemplate::dropdown(['value'    => 0,
-                                          'entity'   => $this->getEntityID(),
-                                          'rand'     => $rand_template,
-                                          // Load type and solution from bookmark
-                                          'toupdate' => [
-                                              'value_fieldname' => 'value',
-                                              'to_update'       => 'solution'.$rand_text,
-                                              'url'             => $CFG_GLPI["root_doc"].
-                                                                   "/ajax/solution.php",
-                                              'moreparams' => [
-                                                  'type_id' => 'dropdown_solutiontypes_id'.
-                                                               $rand_type]]]);
-
-         echo "</td><td colspan='2'>";
-         if (Session::haveRightsOr('knowbase', [READ, KnowbaseItem::READFAQ])) {
-            echo "<a class='vsubmit' title=\"".__s('Search a solution')."\"
-                   href='".$CFG_GLPI['root_doc']."/front/knowbaseitem.php?item_itemtype=".
-                   $this->getType()."&amp;item_items_id=".$this->getField('id').
-                   "&amp;forcetab=Knowbase$1'>".__('Search a solution')."</a>";
-         }
-         echo "</td></tr>";
-      }
-
-      echo "<tr class='tab_bg_2'>";
-      echo "<td>".__('Solution type')."</td><td>";
-
-      $current = $this->fields['status'];
-      // Settings a solution will set status to solved
-      if ($canedit) {
-         SolutionType::dropdown(['value'  => $this->getField('solutiontypes_id'),
-                                      'rand'   => $rand_type,
-                                      'entity' => $this->getEntityID()]);
+      $solution = new ITILSolution();
+      if (ITILSolution::countFor($this->getType(), $this->getID()) > 0) {
+         $solution->showSummary($this);
       } else {
-         echo Dropdown::getDropdownName('glpi_solutiontypes',
-                                        $this->getField('solutiontypes_id'));
+         $solution->showForm(null, ['item' => $this]);
       }
-      echo "</td><td colspan='2'>";
-
-      if (Session::haveRightsOr('knowbase', [READ, KnowbaseItem::READFAQ]) && $knowbase_id_toload != 0) {
-         echo '<br/><input type="checkbox" name="kb_linked_id" id="kb_linked_id" value="' . $kb->getID() . '" checked="checked">';
-         echo ' <label for="kb_linked_id">' . str_replace('%id', $kb->getID(), __('Link to knowledge base entry #%id')) . '</label>';
-      } else {
-         echo '&nbsp;';
-      }
-      echo "</td></tr>";
-      if ($canedit && Session::haveRight('knowbase', UPDATE)) {
-         echo "<tr class='tab_bg_2'><td>".__('Save and add to the knowledge base')."</td><td>";
-         Dropdown::showYesNo('_sol_to_kb', false);
-         echo "</td><td colspan='2'>&nbsp;</td></tr>";
-      }
-      echo "<tr class='tab_bg_2'>";
-      echo "<td>".__('Description')."</td><td colspan='3'>";
-
-      if ($canedit) {
-         $rand = mt_rand();
-         Html::initEditorSystem("solution$rand");
-
-         echo "<div id='solution$rand_text'>";
-         echo "<textarea id='solution$rand' name='solution' rows='12' cols='80'>".
-                $this->getField('solution')."</textarea></div>";
-
-      } else {
-         echo Toolbox::unclean_cross_side_scripting_deep($this->getField('solution'));
-      }
-      echo "</td></tr>";
-
-      $options['candel']  = false;
-      $options['canedit'] = $canedit;
-      $this->showFormButtons($options);
-
    }
 
    /**

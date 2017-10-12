@@ -118,6 +118,11 @@ class ITILSolution extends CommonDBTM {
       if ($this->isNewItem()) {
          $this->getEmpty();
       }
+
+      if (!isset($options['item']) && isset($options['parent'])) {
+         //when we came from aja/viewsubitem.php
+         $options['item'] = $options['parent'];
+      }
       $item = $options['item'];
       $this->item = $item;
       $item->check($item->getID(), READ);
@@ -464,18 +469,17 @@ class ITILSolution extends CommonDBTM {
          echo "<div class='ajax_box' id='viewitem" . $item->getID() . "$rand'></div>\n";
          $js .= "function viewAddSubitem" . $item->getID() . "$rand(itemtype) {\n";
          $params = [
-            'action'     => 'viewsubitem',
-            'type'       => 'itemtype',
-            'parenttype' => 'Ticket',
-            'tickets_id' => $item->getID(),
-            'id'         => -1
+            'type'                        => __CLASS__,
+            'parenttype'                  => $item->getType(),
+            $item->getForeignKeyField()   => $item->getID(),
+            'id'                          => -1
          ];
          if (isset($_GET['load_kb_sol'])) {
             $params['load_kb_sol'] = $_GET['load_kb_sol'];
          }
          $out = Ajax::updateItemJsCode(
             "viewitem" . $item->getID() . "$rand",
-            $CFG_GLPI["root_doc"]."/ajax/timeline.php",
+            $CFG_GLPI["root_doc"]."/ajax/viewsubitem.php",
             $params,
             "",
             false
