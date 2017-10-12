@@ -73,7 +73,7 @@ class ITILSolution extends CommonDBTM {
    }
 
    public static function canCreate() {
-      //FIXME
+      //always true, will rely on self::canCreateItem
       return true;
    }
 
