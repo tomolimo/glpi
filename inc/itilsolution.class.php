@@ -424,7 +424,11 @@ class ITILSolution extends CommonDBTM {
          }
          echo "</div>"; // boxnotefloatright
 
-         $content = $solution['content'];
+         $content = preg_replace_callback("/(&#[0-9]+;)/", function($m) {
+            return mb_convert_encoding($m[1], "UTF-8", "HTML-ENTITIES");
+         }, $solution['content']);
+         $content = Toolbox::unclean_cross_side_scripting_deep($content);
+
          $content = autolink($content, 40);
 
          $long_text = "";
