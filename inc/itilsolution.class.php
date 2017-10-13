@@ -255,18 +255,49 @@ class ITILSolution extends CommonDBTM {
 
    function prepareInputForAdd($input) {
       $input['users_id'] = Session::getLoginUserID();
+
+      if ($this->item == null) {
+         $this->item = new $input['itemtype'];
+         $this->item->getFromDB($input['items_id']);
+      }
+
+      //default status for global solutions
+      $status = CommonITILValidation::ACCEPTED;
+      if ($input['itemtype'] == Ticket::getType()) {
+         $autoclosedelay =  Entity::getUsedConfig(
+            'autoclose_delay',
+            $this->item->getEntityID(),
+            '',
+            Entity::CONFIG_NEVER
+         );
+
+         // 0 = immediatly
+         if ($autoclosedelay != 0) {
+            $status = CommonITILValidation::WAITING;
+         }
+      }
+
+      //Auto approval; store user and date
+      if ($status == CommonITILValidation::ACCEPTED) {
+         $input['users_id_approval'] = Session::getLoginUserID();
+         $input['date_approval'] = $_SESSION["glpi_currenttime"];
+      }
+
+      $input['status'] = $status;
+
       return $input;
    }
 
    function post_addItem() {
-      //adding a solution mean the ITIL object is now closed
+      //adding a solution mean the ITIL object is now solved
+      //and maybe closed (according to entitiy configuration)
       if ($this->item == null) {
          $this->item = new $this->fields['itemtype'];
          $this->item->getFromDB($this->fields['items_id']);
       }
 
       $item = $this->item;
-      $status = $item::SOLVED;
+      $status = $item::CLOSED;
       if ($this->item->getType() == 'Ticket') {
          $autoclosedelay =  Entity::getUsedConfig(
             'autoclose_delay',
@@ -276,8 +307,8 @@ class ITILSolution extends CommonDBTM {
          );
 
          // 0 = immediatly
-         if ($autoclosedelay == 0) {
-            $status = $item::CLOSED;
+         if ($autoclosedelay != 0) {
+            $status = $item::SOLVED;
          }
       }
       $this->item->update([
@@ -377,8 +408,16 @@ class ITILSolution extends CommonDBTM {
          $user->getFromDB($solution['users_id']);
 
          $class = '';
-         if ($solution['is_rejected'] == 0) {
-            $class .= " accepted";
+         switch ($solution['status']) {
+            case CommonITILValidation::WAITING:
+               $class .= 'waiting';
+               break;
+            case CommonITILValidation::ACCEPTED:
+               $class .= 'accepted';
+               break;
+            case CommonITILValidation::REFUSED:
+               $class .= 'refused';
+               break;
          }
 
          echo "<div class='boxnote$class' id='viewitemSolution{$solution['id']}$rand'>";
@@ -410,13 +449,22 @@ class ITILSolution extends CommonDBTM {
          if (isset($solution['users_id_editor']) && $solution['users_id_editor'] > 0) {
             echo "<div class='users_id_editor' id='users_id_editor_".$solution['users_id_editor']."'>";
             $user->getFromDB($solution['users_id_editor']);
-            $message = __('Last edited on %1$s by %2$s');
-            if ($solution['is_rejected'] == 1) {
-               $message = __('Rejected on %1$s by %2$s');
-            }
+            echo sprintf(
+               __('Last edited on %1$s by %2$s'),
+               Html::convDateTime($solution['date_mod']),
+               $user->getLink()
+            );
+            echo "</div>";
+         }
+         if ($solution['status'] != CommonITILValidation::WAITING && $solution['status'] != CommonITILValidation::NONE) {
+            echo "<div class='users_id_approval' id='users_id_approval_".$solution['users_id_approval']."'>";
+            $user->getFromDB($solution['users_id_approval']);
+            $message = __('%1$s on %2$s by %3$s');
+            $action = $solution['status'] == CommonITILValidation::ACCEPTED ? __('Accepted') : __('Refused');
             echo sprintf(
                $message,
-               Html::convDateTime($solution['date_mod']),
+               $action,
+               Html::convDateTime($solution['date_approval']),
                $user->getLink()
             );
             echo "</div>";

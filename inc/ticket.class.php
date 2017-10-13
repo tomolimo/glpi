@@ -5335,10 +5335,12 @@ class Ticket extends CommonITILObject {
             break;
 
          case "rejected" : // on affiche les tickets rejet??s
-            $query .= "WHERE $is_deleted
+            $query .= " LEFT JOIN `glpi_itilsolutions`
+                           ON (`glpi_tickets`.`id` = `glpi_itilsolutions`.`items_id` AND `glpi_itilsolutions`.`itemtype` = 'Tciket')
+                        WHERE $is_deleted
                              AND ($search_assign)
                              AND `status` <> '".self::CLOSED."'
-                             AND `global_validation` = '".CommonITILValidation::REFUSED."' ".
+                             AND `glpi_itilsolutions`.`status` = '".CommonITILValidation::REFUSED."' ".
                              getEntitiesRestrictRequest("AND", "glpi_tickets");
             break;
 
@@ -6754,7 +6756,9 @@ class Ticket extends CommonITILObject {
                'timeline_position'  => self::TIMELINE_RIGHT,
                'users_id_editor'    => $solution_item['users_id_editor'],
                'date_mod'           => $solution_item['date_mod'],
-               'is_rejected'        => $solution_item['is_rejected']
+               'users_id_approval'  => $solution_item['users_id_editor'],
+               'date_approval'      => $solution_item['date_approval'],
+               'status'             => $solution_item['status']
             ]
          ];
       }
@@ -6880,7 +6884,7 @@ class Ticket extends CommonITILObject {
          }
 
          //display solution in middle
-         if (($item['type'] == "Solution") && $item_i['is_rejected'] == 0
+         if (($item['type'] == "Solution") && $item_i['status'] != CommonITILValidation::REFUSED
               && in_array($this->fields["status"], [CommonITILObject::SOLVED, CommonITILObject::CLOSED])) {
             $user_position.= ' middle';
          }
@@ -6921,12 +6925,22 @@ class Ticket extends CommonITILObject {
          $domid .= $rand;
 
          $class = "h_content {$item['type']}";
-         if (isset($item_i['status'])) {
+         if ($item['type'] == 'Solution') {
+            switch ($item_i['status']) {
+               case CommonITILValidation::WAITING:
+                  $class .= ' waiting';
+                  break;
+               case CommonITILValidation::ACCEPTED:
+                  $class .= ' accepted';
+                  break;
+               case CommonITILValidation::REFUSED:
+                  $class .= ' refused';
+                  break;
+            }
+         } else if (isset($item_i['status'])) {
             $class .= " {$item_i['status']}";
          }
-         if ($item['type'] == 'Solution' && $item_i['is_rejected'] == 1) {
-            $class .= " rejected";
-         }
+
          echo "<div class='$class'".
                " id='$domid'>";
          if (isset($item_i['can_edit']) && $item_i['can_edit']) {
@@ -7029,15 +7043,29 @@ class Ticket extends CommonITILObject {
             echo "<div class='users_id_editor' id='users_id_editor_".$item_i['users_id_editor']."'>";
             $user->getFromDB($item_i['users_id_editor']);
             $userdata = getUserName($item_i['users_id_editor'], 2);
-            $message = __('Last edited on %1$s by %2$s');
-            if (isset($item_i['is_rejected']) && $item_i['is_rejected'] == 1) {
-               $message = __('Rejected on %1$s by %2$s');
-            }
             echo sprintf(
-               $message,
+               __('Last edited on %1$s by %2$s'),
                Html::convDateTime($item_i['date_mod']),
                $user->getLink()
             );
+            echo Html::showToolTip($userdata["comment"],
+                                   ['link' => $userdata['link']]);
+            echo "</div>";
+         }
+         if ($item['type'] == 'Solution' && $item_i['status'] != CommonITILValidation::WAITING && $item_i['status'] != CommonITILValidation::NONE) {
+            echo "<div class='users_id_approval' id='users_id_approval_".$item_i['users_id_approval']."'>";
+            $user->getFromDB($item_i['users_id_approval']);
+            $userdata = getUserName($item_i['users_id_editor'], 2);
+            $message = __('%1$s on %2$s by %3$s');
+            $action = $item_i['status'] == CommonITILValidation::ACCEPTED ? __('Accepted') : __('Refused');
+            echo sprintf(
+               $message,
+               $action,
+               Html::convDateTime($item_i['date_approval']),
+               $user->getLink()
+            );
+            echo Html::showToolTip($userdata["comment"],
+                                   ['link' => $userdata['link']]);
             echo "</div>";
          }
 

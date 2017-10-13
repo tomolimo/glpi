@@ -1193,13 +1193,13 @@ abstract class CommonITILObject extends CommonDBTM {
          && in_array($this->oldvalues['status'], $statuses)
          && !in_array($this->fields['status'], $statuses)
       ) {
-         //Mark existing solutions as rejected
+         //Mark existing solutions as refused
          $query = "UPDATE `" . ITILSolution::getTable() . "`
-            SET `is_rejected`=1, `users_id_editor`=" . Session::getLoginUserID() . ",
-            `date_mod`='". date('Y-m-d H:i:s') ."'
+            SET `status`=".CommonITILValidation::REFUSED.", `users_id_approval`=" . Session::getLoginUserID() . ",
+            `date_approval`='". date('Y-m-d H:i:s') ."'
                WHERE `itemtype`='" . static::getType() . "'
                AND `items_id`=" . $this->getID() . "
-               AND `is_rejected`=0";
+               AND (`status`=".CommonITILValidation::WAITING . " OR `status`=".CommonITILValidation::NONE.")";
          $DB->query($query);
       }
 

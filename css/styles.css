@@ -3482,7 +3482,10 @@ a.copyright {
    background-repeat: no-repeat;
 }
 
-.timeline_history .h_content.Solution.rejected {
+.timeline_history .h_content.Solution.waiting {
+   border-left-color: orange;
+}
+.timeline_history .h_content.Solution.refused {
    border-left: 1em red solid;
    background-image: url(../pics/timeline/solution-rej.png);
 }

@@ -61,9 +61,12 @@ function update92to93() {
          `content` longtext COLLATE utf8_unicode_ci,
          `date_creation` datetime DEFAULT NULL,
          `date_mod` datetime DEFAULT NULL,
+         `date_approval` datetime DEFAULT NULL,
          `users_id` int(11) NOT NULL DEFAULT '0',
          `users_id_editor` int(11) NOT NULL DEFAULT '0',
-         `is_rejected` tinyint(1) NOT NULL DEFAULT '0',
+         `users_id_approval` int(11) NOT NULL DEFAULT '0',
+         `status` int(11) NOT NULL DEFAULT '1',
+         `ticketfollowups_id` int(11) DEFAULT NULL  COMMENT 'Followup reference on reject or approve a ticket solution',
          PRIMARY KEY (`id`),
          KEY `itemtype` (`itemtype`),
          KEY `item_id` (`items_id`),
@@ -71,7 +74,9 @@ function update92to93() {
          KEY `solutiontypes_id` (`solutiontypes_id`),
          KEY `users_id` (`users_id`),
          KEY `users_id_editor` (`users_id_editor`),
-         KEY `is_rejected` (`is_rejected`)
+         KEY `users_id_approval` (`users_id_approval`),
+         KEY `status` (`status`),
+         KEY `ticketfollowups_id` (`ticketfollowups_id`)
          ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
       $DB->queryOrDie($query, "9.3 add table glpi_itilsolutions");
    }

@@ -674,7 +674,9 @@ class KnowbaseItem extends CommonDBVisible {
                $solution->getFromDBByCrit([
                   'itemtype'     => $item->getType(),
                   'items_id'     => $item->getID(),
-                  'is_rejected'  => 0
+                  [
+                     'NOT' => ['status'       => CommonITILValidation::REFUSED]
+                  ]
                ]);
                $this->fields['answer'] = $solution->getField('content');
                if ($item->isField('itilcategories_id')) {
