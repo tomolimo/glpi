@@ -4219,54 +4219,30 @@ abstract class CommonITILObject extends CommonDBTM {
    /**
     * Form to add a solution to an ITIL object
     *
-    * @since version 0.84
+    * @since 0.84
+    * @since 9.2 Signature has changed
+    *
+    * @param CommonITILObject $item item instance
     *
     * @param $entities_id
    **/
-   static function showMassiveSolutionForm($entities_id) {
-      global $CFG_GLPI;
-
+   static function showMassiveSolutionForm(CommonITILObject $item) {
       echo "<table class='tab_cadre_fixe'>";
       echo '<tr><th colspan=4>'.__('Solve tickets').'</th></tr>';
 
-      $rand_template = mt_rand();
-      $rand_text     = mt_rand();
-      $rand_type     = mt_rand();
-      echo "<tr class='tab_bg_2'>";
-      echo "<td>"._n('Solution template', 'Solution templates', 1)."</td><td>";
+      $solution = new ITILSolution();
+      $solution->showForm(
+         null,
+         [
+            'item'   => $item,
+            'entity' => $item->getEntityID(),
+            'noform' => true,
+            'nokb'   => true
+         ]
+      );
 
-      SolutionTemplate::dropdown(['value'    => 0,
-                                       'entity'   => $entities_id,
-                                       'rand'     => $rand_template,
-                                       // Load type and solution from bookmark
-                                       'toupdate' => ['value_fieldname'
-                                                                        => 'value',
-                                                           'to_update'  => 'solution'.$rand_text,
-                                                           'url'        => $CFG_GLPI["root_doc"].
-                                                                            "/ajax/solution.php",
-                                                           'moreparams'
-                                                              => ['type_id'
-                                                                        => 'dropdown_solutiontypes_id'.
-                                                                            $rand_type]]]);
-
-      echo "</td><td colspan='2'>&nbsp;</td></tr>";
-
-      echo "<tr class='tab_bg_2'>";
-      echo "<td>".__('Solution type')."</td><td>";
-      SolutionType::dropdown(['value'  => 0,
-                                   'rand'   => $rand_type,
-                                   'entity' => $entities_id]);
-      echo "</td><td colspan='2'>&nbsp;</td></tr>";
-      echo "<tr class='tab_bg_2'>";
-      echo "<td>".__('Description')."</td><td colspan='3'>";
-      $rand = mt_rand();
-      Html::initEditorSystem("solution$rand");
-      echo "<div id='solution$rand_text'>";
-      echo "<textarea id='solution$rand' name='solution' rows='12' cols='80'></textarea></div>";
       echo "</td></tr>";
-
       echo '</table>';
-
    }
 
 

@@ -117,6 +117,7 @@ class ITILSolution extends CommonDBTM {
          //when we came from aja/viewsubitem.php
          $options['item'] = $options['parent'];
       }
+
       $item = $options['item'];
       $this->item = $item;
       $item->check($item->getID(), READ);
@@ -130,7 +131,6 @@ class ITILSolution extends CommonDBTM {
       }
 
       $canedit = $item->maySolve();
-      $options = [];
 
       if (isset($options['kb_id_toload']) && $options['kb_id_toload'] > 0) {
          $kb = new KnowbaseItem();
@@ -145,7 +145,9 @@ class ITILSolution extends CommonDBTM {
          $validationtype::alertValidation($item, 'solution');
       }
 
-      $this->showFormHeader($options);
+      if (!isset($options['noform'])) {
+         $this->showFormHeader($options);
+      }
 
       $show_template = $canedit;
       $rand_template = mt_rand();
@@ -158,9 +160,11 @@ class ITILSolution extends CommonDBTM {
          echo "<tr class='tab_bg_2'>";
          echo "<td>"._n('Solution template', 'Solution templates', 1)."</td><td>";
 
+         $entity = isset($options['entities_id']) ? $options['entities_id'] : $this->getEntityID();
+
          SolutionTemplate::dropdown([
             'value'    => 0,
-            'entity'   => $this->getEntityID(),
+            'entity'   => $entity,
             'rand'     => $rand_template,
             // Load type and solution from bookmark
             'toupdate' => [
@@ -207,7 +211,7 @@ class ITILSolution extends CommonDBTM {
          echo '&nbsp;';
       }
       echo "</td></tr>";
-      if ($canedit && Session::haveRight('knowbase', UPDATE)) {
+      if ($canedit && Session::haveRight('knowbase', UPDATE) && !isset($options['nokb'])) {
          echo "<tr class='tab_bg_2'><td>".__('Save and add to the knowledge base')."</td><td>";
          Dropdown::showYesNo('_sol_to_kb', false);
          echo "</td><td colspan='2'>&nbsp;</td></tr>";
@@ -228,9 +232,11 @@ class ITILSolution extends CommonDBTM {
       }
       echo "</td></tr>";
 
-      $options['candel']   = false;
-      $options['canedit']  = $canedit;
-      $this->showFormButtons($options);
+      if (!isset($options['noform'])) {
+         $options['candel']   = false;
+         $options['canedit']  = $canedit;
+         $this->showFormButtons($options);
+      }
    }
 
 
