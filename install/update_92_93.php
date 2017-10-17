@@ -79,10 +79,80 @@ function update92to93() {
          KEY `ticketfollowups_id` (`ticketfollowups_id`)
          ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
       $DB->queryOrDie($query, "9.3 add table glpi_itilsolutions");
+
+      //FIXME: this is NOT th final version
+      //TODO: migrate Problems and Changes as well.
+      //TODO: drop old field and index.
+      //migrate solution history for tickets
+      $query = "INSERT INTO `glpi_itilsolutions` (itemtype, items_id, date_creation, users_id, solutiontypes_id, content, status, date_approval, ticketfollowups_id, users_id_approval)
+                  SELECT
+                  'Ticket' AS itemtype,
+                  obj.`id` AS items_id,
+                  IFNULL(
+                     glsolve.`date_mod`,
+                     obj.`solvedate`
+                  ) AS date_creation,
+                  SUBSTRING_INDEX(
+                     SUBSTRING_INDEX(glsolve.`user_name`, '(', -1),
+                     ')',
+                     1
+                  ) AS users_id,
+                  IF(
+                     glsolvetype.`new_value` IS NOT NULL,
+                     SUBSTRING_INDEX(
+                           SUBSTRING_INDEX(glsolvetype.`new_value`, '(', -1),
+                           ')',
+                           1
+                     ),
+                     obj.`solutiontypes_id`
+                  ) AS solutiontypes_id,
+                  IFNULL(
+                     glcontent.`new_value`,
+                     obj.`solution`
+                  ) AS content,
+                  IF(
+                     IFNULL(glansw.`date_mod`, obj.`closedate`) IS NULL,
+                     1,
+                     IF(
+                           glansw.`new_value` = 6 OR(
+                              glansw.`new_value` IS NULL AND obj.`closedate` IS NOT NULL
+                           ),
+                           3,
+                        2
+                  )
+               ) AS approval,
+               IFNULL(glansw.`date_mod`, obj.`closedate`) AS date_mod,
+               fup.`id` AS 'ticketfollowups_id',
+               fup.`users_id` AS users_id_approval
+            FROM glpi_tickets AS obj
+            LEFT JOIN `glpi_logs` AS glsolve
+               ON glsolve.`itemtype` = 'Ticket' AND glsolve.`items_id` = obj.`id` AND glsolve.`id_search_option` = 12 AND glsolve.`new_value` = 5
+            LEFT JOIN `glpi_logs` AS glsolvetype
+               ON glsolvetype.`itemtype` = 'Ticket' AND glsolvetype.`items_id` = obj.`id` AND glsolvetype.`id_search_option` = 23 AND glsolvetype.`date_mod` = glsolve.`date_mod`
+            LEFT JOIN `glpi_logs` AS glcontent
+               ON glcontent.`id` =(
+                  SELECT MAX(gl.`id`) FROM `glpi_logs` AS gl
+                     WHERE gl.`itemtype` = 'Ticket' AND gl.`items_id` = obj.`id` AND gl.`id_search_option` = 24 AND gl.`id` < glsolve.`id`
+                     GROUP BY gl.`items_id`
+               )
+            LEFT JOIN `glpi_logs` AS glansw
+               ON glansw.`id` =(
+                   SELECT MIN(gl.`id`) FROM `glpi_logs` AS gl
+                  WHERE gl.`itemtype` = 'Ticket' AND gl.`items_id` = obj.`id` AND gl.`id_search_option` = 12 AND gl.`old_value` = 5 AND gl.`id` > glsolve.`id`
+                  GROUP BY gl.`items_id`
+               )
+            LEFT JOIN `glpi_logs` AS glfup
+               ON glfup.`itemtype` = 'Ticket' AND glfup.`items_id` = obj.`id` AND glfup.`itemtype_link` = 'TicketFollowup' AND glfup.`date_mod` = glansw.`date_mod`
+            LEFT JOIN `glpi_ticketfollowups` AS fup
+               ON fup.`id` = glfup.`new_value`
+            WHERE
+               obj.`solution` IS NOT NULL AND obj.`solution` <> ''";
+      $DB->queryOrDie($query, "9.3 migrate solutions history");
    }
 
+   //FIXME: old migration, to be removed (kept for refernece right now)
    //Migrate to new  solutions
-   $solutions_itemtypes = [
+   /*$solutions_itemtypes = [
       'Ticket',
       'Change',
       'Problem'
@@ -139,7 +209,7 @@ function update92to93() {
          $migration->dropKey($table, 'solutiontypes_id');
          $migration->dropField($table, 'solutiontypes_id');
       }
-   }
+   }*/
 
    // ************ Keep it at the end **************
    $migration->executeMigration();
