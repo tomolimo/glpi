@@ -1203,6 +1203,17 @@ abstract class CommonITILObject extends CommonDBTM {
          $DB->query($query);
       }
 
+      if (isset($this->input['_accepted'])) {
+         //Mark last solution as approved
+         $query = "UPDATE `" . ITILSolution::getTable() . "`
+            SET `status`=".CommonITILValidation::ACCEPTED.", `users_id_approval`=" . Session::getLoginUserID() . ",
+            `date_approval`='". date('Y-m-d H:i:s') ."'
+               WHERE `itemtype`='" . static::getType() . "'
+               AND `items_id`=" . $this->getID() . "
+               ORDER BY date_creation DESC LIMIT 1";
+         $DB->query($query);
+      }
+
       // Do not take into account date_mod if no update is done
       if ((count($this->updates) == 1)
           && (($key = array_search('date_mod', $this->updates)) !== false)) {

@@ -417,6 +417,7 @@ class TicketFollowup  extends CommonDBTM {
          $update['id']        = $this->input["_job"]->fields['id'];
          $update['status']    = CommonITILObject::CLOSED;
          $update['closedate'] = $_SESSION["glpi_currenttime"];
+         $update['_accepted'] = true;
 
          // Use update method for history
          $this->input["_job"]->update($update);
