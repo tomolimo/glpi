@@ -2926,6 +2926,7 @@ abstract class CommonITILObject extends CommonDBTM {
          'field'              => 'name',
          'name'               => __('Solution type'),
          'datatype'           => 'dropdown',
+         'forcegroupby'       => true,
          'joinparams'         => [
             'beforejoin'         => [
                'table'              => ITILSolution::getTable(),
@@ -2944,6 +2945,7 @@ abstract class CommonITILObject extends CommonDBTM {
          'datatype'           => 'text',
          'htmltext'           => true,
          'massiveaction'      => false,
+         'forcegroupby'       => true,
          'joinparams'         => [
             'jointype'           => 'itemtype_item'
          ]
