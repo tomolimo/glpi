@@ -142,7 +142,55 @@ function update92to93() {
                ON fup.`id` = glfup.`new_value`
             WHERE
                obj.`solution` IS NOT NULL";
-      $DB->queryOrDie($query, "9.3 migrate Ticket solutions history");
+      $DB->queryOrDie($query, "9.3 migrate Ticket solution history");
+
+
+      // Problem soution history
+      $query = "REPLACE INTO `glpi_itilsolutions` (itemtype, items_id, date_creation, users_id, user_name, solutiontypes_id, solutiontype_name, content, status, date_approval, ticketfollowups_id, users_id_approval, user_name_approval)
+                  SELECT DISTINCT 'Problem' AS itemtype,
+		                obj.`id` AS items_id,
+			               IFNULL(glsolve.`date_mod`, obj.`solvedate`) AS date_creation,
+			               IF(glsolve.user_name REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glsolve.`user_name`, '(', -1), ')', 1), 0) AS users_id,
+			               IF(glsolve.user_name REGEXP '[(][0-9]+[)]$', NULL, glsolve.`user_name`) AS user_name,
+			               IF(glsolvetype.`new_value` REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glsolvetype.`new_value`, '(', -1), ')', 1), 0) AS solutiontypes_id,
+			               IF(glsolvetype.`new_value` REGEXP '[(][0-9]+[)]$', NULL, glsolvetype.`new_value`) AS solutiontype_name,
+			               IFNULL(glcontent.`new_value`, obj.`solution`) AS content,
+			               IF( IFNULL(glansw.`date_mod`, obj.`closedate`) IS NULL, 1, IF( glansw.`new_value` = 6 OR (glansw.`new_value` IS NULL AND obj.`closedate` IS NOT NULL), 3, 2)) AS status,
+			               IFNULL(glansw.`date_mod`, obj.`closedate`) AS date_approval,
+			               NULL AS 'ticketfollowups_id',
+								IF(glansw.`user_name` REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glansw.`user_name`, '(', -1), ')', 1), 0) AS users_id_approval,
+								IF(glansw.`user_name` REGEXP '[(][0-9]+[)]$', NULL, glansw.`user_name`) AS user_name_approval
+                     FROM glpi_problems AS obj
+                     LEFT JOIN `glpi_logs` AS glsolve ON glsolve.`itemtype` = 'Problem' AND glsolve.`items_id` = obj.`id` AND glsolve.`id_search_option` = 12 AND glsolve.`new_value` = 5
+                     LEFT JOIN `glpi_logs` AS glsolvetype ON glsolvetype.id = (select max(gl.id) from glpi_logs as gl where gl.itemtype='Problem' and gl.items_id=obj.id and gl.id_search_option=23 and gl.id < glsolve.id group by gl.items_id)
+                     LEFT JOIN `glpi_logs` AS glcontent ON  glcontent.`id` = (SELECT MAX(gl.`id`) FROM `glpi_logs` AS gl WHERE gl.`itemtype`='Problem' AND gl.`items_id` = obj.`id` AND gl.`id_search_option` = 24 AND gl.`id` < glsolve.`id` GROUP BY gl.`items_id`)
+                     LEFT JOIN `glpi_logs` AS glansw ON glansw.`id` = (SELECT MIN(gl.`id`) FROM `glpi_logs` AS gl WHERE gl.`itemtype`='Problem' AND gl.`items_id` = obj.`id` AND gl.`id_search_option` = 12 AND gl.`old_value` = 5 AND gl.`id` > glsolve.`id` GROUP BY gl.`items_id`)
+                     WHERE obj.`solution` IS NOT NULL AND IFNULL(glsolve.`date_mod`, obj.`solvedate`) IS NOT NULL" ;
+      $DB->queryOrDie($query, "9.3 migrate Problem solution history");
+
+      // Change solution history
+      $query = "REPLACE INTO `glpi_itilsolutions` (itemtype, items_id, date_creation, users_id, user_name, solutiontypes_id, solutiontype_name, content, status, date_approval, ticketfollowups_id, users_id_approval, user_name_approval)
+                  SELECT DISTINCT 'Change' AS itemtype,
+	                  obj.`id` AS items_id,
+	                  IFNULL(glsolve.`date_mod`, obj.`solvedate`) AS date_creation,
+	                  IF(glsolve.user_name REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glsolve.`user_name`, '(', -1), ')', 1), 0) AS users_id,
+	                  IF(glsolve.user_name REGEXP '[(][0-9]+[)]$', NULL, glsolve.`user_name`) AS user_name,
+	                  IF(glsolvetype.`new_value` REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glsolvetype.`new_value`, '(', -1), ')', 1), 0) AS solutiontypes_id,
+	                  IF(glsolvetype.`new_value` REGEXP '[(][0-9]+[)]$', NULL, glsolvetype.`new_value`) AS solutiontype_name,
+	                  IFNULL(glcontent.`new_value`, obj.`solution`) AS content,
+	                  IF( IFNULL(glansw.`date_mod`, obj.`closedate`) IS NULL, 1, IF( glansw.`new_value` = 6 OR (glansw.`new_value` IS NULL AND obj.`closedate` IS NOT NULL), 3, 2)) AS status,
+	                  IFNULL(glansw.`date_mod`, obj.`closedate`) AS date_approval,
+	                  NULL AS 'ticketfollowups_id',
+	                  IF(glansw.`user_name` REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glansw.`user_name`, '(', -1), ')', 1), 0) AS users_id_approval,
+	                  IF(glansw.`user_name` REGEXP '[(][0-9]+[)]$', NULL, glansw.`user_name`) AS user_name_approval
+                  FROM glpi_changes AS obj
+                  LEFT JOIN `glpi_logs` AS glsolve ON glsolve.`itemtype` = 'Change' AND glsolve.`items_id` = obj.`id` AND glsolve.`id_search_option` = 12 AND glsolve.`new_value` = 5
+                  LEFT JOIN `glpi_logs` AS glsolvetype ON glsolvetype.id = (select max(gl.id) from glpi_logs as gl where gl.itemtype='Change' and gl.items_id=obj.id and gl.id_search_option=23 and gl.id < glsolve.id group by gl.items_id)
+                  LEFT JOIN `glpi_logs` AS glcontent ON  glcontent.`id` = (SELECT MAX(gl.`id`) FROM `glpi_logs` AS gl WHERE gl.`itemtype`='Change' AND gl.`items_id` = obj.`id` AND gl.`id_search_option` = 24 AND gl.`id` < glsolve.`id` GROUP BY gl.`items_id`)
+                  LEFT JOIN `glpi_logs` AS glansw ON glansw.`id` = (SELECT MIN(gl.`id`) FROM `glpi_logs` AS gl WHERE gl.`itemtype`='Change' AND gl.`items_id` = obj.`id` AND gl.`id_search_option` = 12 AND gl.`old_value` = 5 AND gl.`id` > glsolve.`id` GROUP BY gl.`items_id`)
+                  WHERE obj.`solution` IS NOT NULL AND IFNULL(glsolve.`date_mod`, obj.`solvedate`) IS NOT NULL";
+      $DB->queryOrDie($query, "9.3 migrate Change solution history");
+
    }
 
    //FIXME: old migration, to be removed (kept for refernece right now)
