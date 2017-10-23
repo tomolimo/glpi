@@ -58,16 +58,20 @@ function update92to93() {
          `itemtype` varchar(100) COLLATE utf8_unicode_ci NOT NULL,
          `items_id` int(11) NOT NULL DEFAULT '0',
          `solutiontypes_id` int(11) NOT NULL DEFAULT '0',
+         `solutiontype_name` varchar(255) NULL DEFAULT NULL,
          `content` longtext COLLATE utf8_unicode_ci,
          `date_creation` datetime DEFAULT NULL,
          `date_mod` datetime DEFAULT NULL,
          `date_approval` datetime DEFAULT NULL,
          `users_id` int(11) NOT NULL DEFAULT '0',
+         `user_name` varchar(255) NULL DEFAULT NULL,
          `users_id_editor` int(11) NOT NULL DEFAULT '0',
          `users_id_approval` int(11) NOT NULL DEFAULT '0',
+         `user_name_approval` varchar(255) NULL DEFAULT '0',
          `status` int(11) NOT NULL DEFAULT '1',
          `ticketfollowups_id` int(11) DEFAULT NULL  COMMENT 'Followup reference on reject or approve a ticket solution',
          PRIMARY KEY (`id`),
+         UNIQUE KEY `itemrec` (`itemtype`, `items_id`, `date_creation`),
          KEY `itemtype` (`itemtype`),
          KEY `item_id` (`items_id`),
          KEY `item` (`itemtype`,`items_id`),
@@ -80,11 +84,11 @@ function update92to93() {
          ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci";
       $DB->queryOrDie($query, "9.3 add table glpi_itilsolutions");
 
-      //FIXME: this is NOT th final version
+      //FIXME: this is NOT the final version
       //TODO: migrate Problems and Changes as well.
       //TODO: drop old field and index.
       //migrate solution history for tickets
-      $query = "INSERT INTO `glpi_itilsolutions` (itemtype, items_id, date_creation, users_id, solutiontypes_id, content, status, date_approval, ticketfollowups_id, users_id_approval)
+      $query = "REPLACE INTO `glpi_itilsolutions` (itemtype, items_id, date_creation, users_id, user_name, solutiontypes_id, solutiontype_name, content, status, date_approval, ticketfollowups_id, users_id_approval, user_name_approval)
                   SELECT
                   'Ticket' AS itemtype,
                   obj.`id` AS items_id,
@@ -92,20 +96,10 @@ function update92to93() {
                      glsolve.`date_mod`,
                      obj.`solvedate`
                   ) AS date_creation,
-                  SUBSTRING_INDEX(
-                     SUBSTRING_INDEX(glsolve.`user_name`, '(', -1),
-                     ')',
-                     1
-                  ) AS users_id,
-                  IF(
-                     glsolvetype.`new_value` IS NOT NULL,
-                     SUBSTRING_INDEX(
-                           SUBSTRING_INDEX(glsolvetype.`new_value`, '(', -1),
-                           ')',
-                           1
-                     ),
-                     obj.`solutiontypes_id`
-                  ) AS solutiontypes_id,
+                  IF(glsolve.user_name REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glsolve.`user_name`, '(', -1), ')', 1), 0) AS users_id,
+			         IF(glsolve.user_name REGEXP '[(][0-9]+[)]$', NULL, glsolve.`user_name`) AS user_name,
+			         IF(glsolvetype.`new_value` REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glsolvetype.`new_value`, '(', -1), ')', 1), 0) AS solutiontypes_id,
+			         IF(glsolvetype.`new_value` REGEXP '[(][0-9]+[)]$', NULL, glsolvetype.`new_value`) AS solutiontype_name,
                   IFNULL(
                      glcontent.`new_value`,
                      obj.`solution`
@@ -120,10 +114,11 @@ function update92to93() {
                            3,
                         2
                   )
-               ) AS approval,
-               IFNULL(glansw.`date_mod`, obj.`closedate`) AS date_mod,
+               ) AS status,
+               IFNULL(glansw.`date_mod`, obj.`closedate`) AS date_approval,
                fup.`id` AS 'ticketfollowups_id',
-               fup.`users_id` AS users_id_approval
+               IF(glansw.`user_name` REGEXP '[(][0-9]+[)]$', SUBSTRING_INDEX(SUBSTRING_INDEX(glansw.`user_name`, '(', -1), ')', 1), 0) AS users_id_approval,
+					IF(glansw.`user_name` REGEXP '[(][0-9]+[)]$', NULL, glansw.`user_name`) AS user_name_approval
             FROM glpi_tickets AS obj
             LEFT JOIN `glpi_logs` AS glsolve
                ON glsolve.`itemtype` = 'Ticket' AND glsolve.`items_id` = obj.`id` AND glsolve.`id_search_option` = 12 AND glsolve.`new_value` = 5
@@ -146,8 +141,8 @@ function update92to93() {
             LEFT JOIN `glpi_ticketfollowups` AS fup
                ON fup.`id` = glfup.`new_value`
             WHERE
-               obj.`solution` IS NOT NULL AND obj.`solution` <> ''";
-      $DB->queryOrDie($query, "9.3 migrate solutions history");
+               obj.`solution` IS NOT NULL";
+      $DB->queryOrDie($query, "9.3 migrate Ticket solutions history");
    }
 
    //FIXME: old migration, to be removed (kept for refernece right now)
@@ -204,7 +199,7 @@ function update92to93() {
             ]);
          }
 
-         //Drop old solutions fields
+         Drop old solutions fields
          $migration->dropField($table, 'solution');
          $migration->dropKey($table, 'solutiontypes_id');
          $migration->dropField($table, 'solutiontypes_id');
