@@ -71,7 +71,7 @@
     },
     "require-dev": {
         "ext-xml": "*",
-        "atoum/atoum": "^4.0",
+        "atoum/atoum": "^4.1",
         "friendsoftwig/twigcs": "^6.0",
         "glpi-project/tools": "^0.5",
         "maglnet/composer-require-checker": "^3.5",
